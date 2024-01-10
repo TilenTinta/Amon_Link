@@ -1,0 +1,58 @@
+++++++++++++ Drone state machine ++++++++++++
+
+#define STATUS_STARTUP		0
+#define STATUS_IDLE_NC		1 // not connected
+#define STATUS_IDLE_CN		2 // connected
+#define STATUS_ERROR		3
+#define STATUS_ARM			4
+#define STATUS_FLY			5
+#define STATUS_FLY_OVER		6
+
+#define RF_STATUS_CN		1
+#define RF_STATUS_NC		
+
+
+
+++++++++++++ Link state machine ++++++++++++
+
+#define STATE_INIT			0		// Initialization routine
+#define STATE_NOT_CONNECTED	1		// Not connected to drone
+#define STATE_CONNECTED		2		// Connected to drone
+#define STATE_CONNECTING	3		// Connecting
+#define STATE_ERROR			4		// Error - device fault (not implemented)
+
+#define CONNECTED			1		// Status of communication 
+#define NOT_CONNECTED		0
+
+
+
+++++++++++++ Communication packets - codes ++++++++++++
+Device include normal text packets that are human readable and codes 
+meant for softare to understand and to speed up comunication
+
+Payload 0-32 byte
+
+MSB -> LSB
+// Byte 0: Address codes
+00 - Reserved / null
+10 - PC
+20 - Link
+30 - Drone
+
+// Byte 1: Command codes
+00 - Reserved / null
+10 - Check connection / status report (ping)
+20 - Error report
+30 - Pair status (only for link to drone)
+31 - start pairing (if not allready paired)
+40 - status, current parameters No.1
+41 - current parameters No.2
+43 - current parameters No.3
+45 - change parameters
+50 - change status (arm, fly...)
+51 - commands (calibrate, save to SD...)
+60 - real time data No.1
+61 - real time data No.2
+62 - real time data No.3
+
+
