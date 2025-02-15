@@ -1,0 +1,5 @@
+(sym_lib_table
+  (version 7)
+  (lib (name "RFX2401C")(type "KiCad")(uri "C:/DATA/Projects/Amon_Link/PCB/Library/RFX2401C/RFX2401C.kicad_sym")(options "")(descr ""))
+  (lib (name "TL3340AF160QG")(type "KiCad")(uri "C:/DATA/Projects/Amon_Link/PCB/Library/TL3340AF160QG/TL3340AF160QG.kicad_sym")(options "")(descr ""))
+)

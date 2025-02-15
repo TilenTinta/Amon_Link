@@ -1,0 +1,5 @@
+(fp_lib_table
+  (version 7)
+  (lib (name "RFX2401C")(type "KiCad")(uri "C:/DATA/Projects/Amon_Link/PCB/Library/RFX2401C.pretty")(options "")(descr ""))
+  (lib (name "Library")(type "KiCad")(uri "C:/DATA/Projects/Amon_Link/PCB/Library/TL3340AF160QG/Library.pretty")(options "")(descr ""))
+)
