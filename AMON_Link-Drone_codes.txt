@@ -9,7 +9,7 @@
 #define STATUS_FLY_OVER		6
 
 #define RF_STATUS_CN		1
-#define RF_STATUS_NC		
+#define RF_STATUS_NC		0
 
 
 
@@ -21,15 +21,13 @@
 #define STATE_CONNECTING	3		// Connecting
 #define STATE_ERROR			4		// Error - device fault (not implemented)
 
-#define CONNECTED			1		// Status of communication 
-#define NOT_CONNECTED		0
+#define RF_STATUS_CN		1
+#define RF_STATUS_NC		0
 
 
 
 ++++++++++++ Communication packets - codes ++++++++++++
-Device include normal text packets that are human readable and codes 
-meant for softare to understand and to speed up comunication
-
+Codes used for communicatin between drone, link and PC
 Payload 0-32 byte
 
 MSB -> LSB
