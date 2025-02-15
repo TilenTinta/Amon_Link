@@ -1,8 +1,6 @@
 # Amon_Link
-
 Project Status:
 PROJECT IN PROGRESS...
-
 Amon_Link is an open-source electronic module designed for RF communication between a PC-based Ground Control system and the Amon lander drone. It serves as a reliable and efficient communication bridge, utilizing dual radios and a compact, low-power design.
 ---
 
