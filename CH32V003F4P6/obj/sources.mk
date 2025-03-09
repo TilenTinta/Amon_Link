@@ -27,5 +27,6 @@ Core \
 Debug \
 Peripheral/src \
 Startup \
+User/NRF24L01 \
 User \
 

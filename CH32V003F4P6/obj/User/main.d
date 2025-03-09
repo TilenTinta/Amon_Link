@@ -22,7 +22,7 @@ User/main.o: ../User/main.c \
  C:\DATA\Projects\Amon_Link\CH32V003F4P6\Peripheral\inc/ch32v00x_wwdg.h \
  C:\DATA\Projects\Amon_Link\CH32V003F4P6\Peripheral\inc/ch32v00x_opa.h \
  C:\DATA\Projects\Amon_Link\CH32V003F4P6\Peripheral\inc/ch32v00x.h \
- ../User/main.h
+ ../User/main.h ../User/NRF24L01/NRF24L01.h
 
 C:\DATA\Projects\Amon_Link\CH32V003F4P6\Debug/debug.h:
 
@@ -71,3 +71,5 @@ C:\DATA\Projects\Amon_Link\CH32V003F4P6\Peripheral\inc/ch32v00x_opa.h:
 C:\DATA\Projects\Amon_Link\CH32V003F4P6\Peripheral\inc/ch32v00x.h:
 
 ../User/main.h:
+
+../User/NRF24L01/NRF24L01.h:
