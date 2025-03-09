@@ -15,42 +15,42 @@
 
 ++++++++++++ Link state machine ++++++++++++
 
-#define STATE_INIT			0		// Initialization routine
-#define STATE_NOT_CONNECTED	1		// Not connected to drone
-#define STATE_CONNECTED		2		// Connected to drone
-#define STATE_CONNECTING	3		// Connecting
-#define STATE_ERROR			4		// Error - device fault (not implemented)
+#define NO_RADIO            1           // Number of radios (1 or 2)
 
-#define RF_STATUS_CN		1
-#define RF_STATUS_NC		0
+#define CONN_STATUS_OK      1           // Flag that indicates the connection status - connected
+#define CONN_STATUS_NOK     0           // Flag that indicates the connection status - disconnected
+
+#define STATE_INIT          0           // State machine value: boot-up (blue light)
+#define STATE_CONN_START    1           // State machine value: try to connect (reconnect triggers the same state)
+#define STATE_CONN_OK       2           // State machine value: successfully connected (green light on)
+#define STATE_CONN_FAIL     3           // State machine value: connect failed (red light blinking, do nothing)
 
 
 
 ++++++++++++ Communication packets - codes ++++++++++++
 Codes used for communicatin between drone, link and PC
-Payload 0-32 byte
+Payload bytes
 
 MSB -> LSB
-// Byte 0: Address codes
-00 - Reserved / null
-10 - PC
-20 - Link
-30 - Drone
+/* Byte 0: Address and command */
+// [8-4: address]
+0000 - Reserved / null
+0001 - PC
+0010 - Link (0011 is still link no. 2)
+0100 - Drone (all higher numbers can be other drones)
 
-// Byte 1: Command codes
-00 - Reserved / null
-10 - Check connection / status report (ping)
-20 - Error report
-30 - Pair status (only for link to drone)
-31 - start pairing (if not allready paired)
-40 - status, current parameters No.1
-41 - current parameters No.2
-43 - current parameters No.3
-45 - change parameters
-50 - change status (arm, fly...)
-51 - commands (calibrate, save to SD...)
-60 - real time data No.1
-61 - real time data No.2
-62 - real time data No.3
+// [4-0: code of the command]
+0000 - Reserved / null
+0001 - (Link/Drone) Check connection / status report (ping)
+0010 - (Link/Drone) Error report - it depands on address
+0100 - (Link) Pair status (link to drone)
+0101 - (Link) Start pairing (if not allready paired)
+0110 - (Link) Current parameters
+0111 - (Link) Change parameters on link
+1000 - (Drone) Current parameters
+1001 - (Drone) Change parameters on drone
+1010 - (Drone) Change status on drone
+1011 - (Drone) Drone commands (calibrate, save to SD...)
+1100 - (Drone) Real time data - telemetry
 
 
