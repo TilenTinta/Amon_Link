@@ -4,7 +4,7 @@ PROJECT IN PROGRESS...
 
 Amon_Link is an open-source electronic module designed for RF communication between a PC-based Ground Control system and the Amon lander drone. It serves as a reliable and efficient communication bridge, utilizing dual radios and a compact, low-power design.
 
-![Amon Link](https://github.com/TilenTinta/Amon_Link/blob/main/Images/Assembly%20v5.png)
+![Amon Link](https://github.com/TilenTinta/Amon_Link/blob/main/Images/PXL_20250811_190909619.jpg)
 ---
 
 # Features
@@ -23,6 +23,7 @@ Amon_Link is an open-source electronic module designed for RF communication betw
 - Firmware Development: C in MounRiver Studio IDE
 - Supported Platforms: Compatible with Windows, Linux, and macOS for Ground Control applications
 - Driver Requirements: CH340G IC for USB communication requires appropriate drivers (if needed)
+- Custom bootloader for USB firmware update
 ---
 
 # Usage
