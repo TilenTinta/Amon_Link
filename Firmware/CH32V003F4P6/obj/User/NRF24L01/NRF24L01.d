@@ -22,12 +22,7 @@ User/NRF24L01/NRF24L01.o: ../User/NRF24L01/NRF24L01.c \
  c:/DATA/Projects/Amon_Link/Firmware/CH32V003F4P6/Peripheral/inc/ch32v00x_usart.h \
  c:/DATA/Projects/Amon_Link/Firmware/CH32V003F4P6/Peripheral/inc/ch32v00x_wwdg.h \
  c:/DATA/Projects/Amon_Link/Firmware/CH32V003F4P6/Peripheral/inc/ch32v00x_opa.h \
- c:/DATA/Projects/Amon_Link/Firmware/CH32V003F4P6/Peripheral/inc/ch32v00x.h \
- c:/DATA/Projects/Amon_Link/Firmware/CH32V003F4P6/User/init.h \
- c:/DATA/Projects/Amon_Link/Firmware/CH32V003F4P6/User/main.h \
- c:/DATA/Projects/Amon_Link/Firmware/CH32V003F4P6/User/init.h \
- c:/DATA/Projects/Amon_Link/Firmware/CH32V003F4P6/User/NRF24L01/NRF24L01.h \
- c:/DATA/Projects/Amon_Link/Firmware/CH32V003F4P6/User/DataDecoder/dataDecoder.h
+ c:/DATA/Projects/Amon_Link/Firmware/CH32V003F4P6/Peripheral/inc/ch32v00x.h
 ../User/NRF24L01/NRF24L01.h:
 c:/DATA/Projects/Amon_Link/Firmware/CH32V003F4P6/Debug/debug.h:
 c:/DATA/Projects/Amon_Link/Firmware/CH32V003F4P6/Peripheral/inc/ch32v00x.h:
@@ -52,8 +47,3 @@ c:/DATA/Projects/Amon_Link/Firmware/CH32V003F4P6/Peripheral/inc/ch32v00x_usart.h
 c:/DATA/Projects/Amon_Link/Firmware/CH32V003F4P6/Peripheral/inc/ch32v00x_wwdg.h:
 c:/DATA/Projects/Amon_Link/Firmware/CH32V003F4P6/Peripheral/inc/ch32v00x_opa.h:
 c:/DATA/Projects/Amon_Link/Firmware/CH32V003F4P6/Peripheral/inc/ch32v00x.h:
-c:/DATA/Projects/Amon_Link/Firmware/CH32V003F4P6/User/init.h:
-c:/DATA/Projects/Amon_Link/Firmware/CH32V003F4P6/User/main.h:
-c:/DATA/Projects/Amon_Link/Firmware/CH32V003F4P6/User/init.h:
-c:/DATA/Projects/Amon_Link/Firmware/CH32V003F4P6/User/NRF24L01/NRF24L01.h:
-c:/DATA/Projects/Amon_Link/Firmware/CH32V003F4P6/User/DataDecoder/dataDecoder.h:
