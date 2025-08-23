@@ -13,7 +13,6 @@
 /* Include */
 #include "debug.h"
 #include <stdio.h>
-#include "init.h"
 
 
 /*###########################################################################################################################################################*/
@@ -73,14 +72,14 @@
 /*###########################################################################################################################################################*/
 /* Structs */
 
-// typedef struct {
-//     SPI_HandleTypeDef   *SPI_Handle;    // SPI handle
-//     uint8_t             radio_preset;   // Set radio as receiver/transmiter
-//     uint8_t             radioID;        // Radio ID
-//     uint8_t             flag_IRQ;       // Flag that indicates interrupt
-//     uint8_t             TX_FIFO[32];    // TX buffer
-//     uint8_t             RX_FIFO[32];    // RX buffer
-// } nRF24L01;
+typedef struct {
+    //SPI_HandleTypeDef   *SPI_Handle;    // SPI handle
+    uint8_t             radio_preset;   // Set radio as receiver/transmiter
+    uint8_t             radioID;        // Radio ID
+    uint8_t             flag_IRQ;       // Flag that indicates interrupt
+    uint8_t             TX_FIFO[32];    // TX buffer
+    uint8_t             RX_FIFO[32];    // RX buffer
+} nRF24L01;
 
 
 /*###########################################################################################################################################################*/

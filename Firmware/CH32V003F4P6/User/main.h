@@ -11,8 +11,8 @@
 
 /* Includes */
 #include <stdio.h>
+#include <stdint.h>
 #include <string.h>
-#include "init.h"                       // Initializator of periphery
 #include "NRF24L01/NRF24L01.h"          // Library for radios
 #include "DataDecoder/dataDecoder.h"    // Encoders and decoder for data frafic
 
@@ -45,8 +45,8 @@
 #define LED_BLUE            GPIO_Pin_0  // PD0: Pin of blue LED
 #define BTN_PIN             GPIO_Pin_4  // PD4: Pin of reconnect button
 
-#define USART_RX            GPIO_Pin_6  // PD6: USART RX pin
-#define USART_TX            GPIO_Pin_5  // PD5: USART TX pin
+#define USART_RX            GPIO_Pin_5  // PD5: USART RX pin
+#define USART_TX            GPIO_Pin_6  // PD6: USART TX pin
 
 #define NRF_MOSI            GPIO_Pin_6  // PC6: SPI MOSI pin for radios
 #define NRF_MISO            GPIO_Pin_7  // PC7: SPI MISO pin for radios
@@ -77,7 +77,6 @@ typedef struct{
 
 
 typedef struct {
-
     // PC -> Drone and Drone -> PC with IRQs //
     // Used for parameters and mid flyght to send commands to drone
     uint8_t     buffer_UART[10];        // Buffer for saving USB data
@@ -91,6 +90,12 @@ typedef struct {
 } BUFFERS;
 
 
+typedef struct {
+    SPI_TypeDef *Instance;              // SPI1
+    SPI_InitTypeDef Init;               // built-in SPI struct
+} SPI_HandleTypeDef;
+
+
 
 /*###########################################################################################################################################################*/
 /* Functions */
@@ -98,11 +103,14 @@ typedef struct {
 void USART1_Init(void);
 void SPI1_Init(void);
 void LinkPinout_Init(void);
-//void TIM_INT_Init(void);
+void TIM_INT_Init(void);
 void UartSendBuffer(uint8_t* buffer, uint16_t length);
+//void USART1_IRQHandler(void);
 void USART1_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
-void EXTI7_0_IRQHandler(void);
+//void EXTI7_0_IRQHandler(void);
 void EXTI7_0_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
+//void TIM2_IRQHandler(void);
+void TIM2_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
 void USART_DMA_TX_Config();
 void Start_DMA_USART_TX(uint8_t len);
 void SPI_DMA_RX_Config();
