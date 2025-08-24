@@ -32,6 +32,7 @@
 #define STATE_CONN_OK       2           // State machine value: successfully connected (green light on)
 #define STATE_CONN_FAIL     3           // State machine value: connect failed (red light blinking, do nothing)
 #define STATE_IDLE          4           // State machine value: state where device doesnt do anything
+#define STATE_FAIL          5           // State machine value: device initialization fail
 
 #define CONN_STATUS_OK      1           // Flag that indicates the connection status - connected
 #define CONN_STATUS_NOK     0           // Flag that indicates the connection status - disconnected
@@ -45,8 +46,8 @@
 #define LED_BLUE            GPIO_Pin_0  // PD0: Pin of blue LED
 #define BTN_PIN             GPIO_Pin_4  // PD4: Pin of reconnect button
 
-#define USART_RX            GPIO_Pin_5  // PD5: USART RX pin
-#define USART_TX            GPIO_Pin_6  // PD6: USART TX pin
+#define USART_RX            GPIO_Pin_6  // PD6: USART RX pin (mistake - pin remaping)
+#define USART_TX            GPIO_Pin_5  // PD5: USART TX pin (mistake - pin remaping)
 
 #define NRF_MOSI            GPIO_Pin_6  // PC6: SPI MOSI pin for radios
 #define NRF_MISO            GPIO_Pin_7  // PC7: SPI MISO pin for radios
@@ -105,12 +106,6 @@ void SPI1_Init(void);
 void LinkPinout_Init(void);
 void TIM_INT_Init(void);
 void UartSendBuffer(uint8_t* buffer, uint16_t length);
-//void USART1_IRQHandler(void);
-void USART1_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
-//void EXTI7_0_IRQHandler(void);
-void EXTI7_0_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
-//void TIM2_IRQHandler(void);
-void TIM2_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
 void USART_DMA_TX_Config();
 void Start_DMA_USART_TX(uint8_t len);
 void SPI_DMA_RX_Config();

@@ -11,6 +11,12 @@
 #include "main.h"
 
 
+/* Interrupts defines */
+void USART1_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
+void EXTI7_0_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
+void TIM2_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
+
+
 /* Global define */
 DEVICE device;                                              // Device variables struct
 BUFFERS buffers;                                            // Device buffers
@@ -31,14 +37,21 @@ int main(void)
     USART_Printf_Init(115200);                              // Enable USART
     USART_DMA_TX_Config();                                  // Configure DMA channel 4 - USART TX (UDP style telemetry data)
     SPI1_Init();                                            // Init SPI
-    SPI_DMA_RX_Config();                                    // Configure DMA channel 2 - SPI RX (UDP style telemetry data)
+    //SPI_DMA_RX_Config();                                    // Configure DMA channel 2 - SPI RX (UDP style telemetry data)
 
 
     // Device start //
     if (device.init_done == 0)
     {
-        GPIO_WriteBit(GPIOC, LED_RED, Bit_SET);             // Device is alive 
-        GPIO_WriteBit(GPIOD, LED_BLUE, Bit_SET);            // Device is alive 
+        // Device is alive 
+        GPIO_WriteBit(GPIOC, LED_RED, Bit_SET);             
+        GPIO_WriteBit(GPIOD, LED_BLUE, Bit_SET); 
+
+        GPIO_WriteBit(GPIOC, NRF_CE1, Bit_RESET);
+        GPIO_WriteBit(GPIOC, NRF_CE2, Bit_RESET); 
+        GPIO_WriteBit(GPIOC, NRF_CS1, Bit_SET);
+        GPIO_WriteBit(GPIOD, NRF_CS2, Bit_SET);         
+
         device.device_id = DBGMCU_GetCHIPID();              // Get unic device ID
         device.state = STATE_INIT;                          // Start device state
         device.conn_status = CONN_STATUS_NOK;               // Connection status
@@ -70,12 +83,35 @@ int main(void)
             char newline[] = "\r\n";
             UartSendBuffer((uint8_t*)newline, strlen(newline));
 
-            // TODO: Radios initialization and setup
+            // Radios initialization and setup
+            NRF24_Attach(&radio1, SPI1, GPIOC, NRF_CS1, GPIOC, NRF_CE1);        // Map pins for radio 1
+            NRF24_Attach(&radio2, SPI1, GPIOD, NRF_CS2, GPIOC, NRF_CE2);        // Map pins for radio 2
+
+            uint8_t status = 0;
+            if (NRF24_ReadStatus(&radio1, &status) == 0) 
+            {
+                if (status != 0x0E) radio1.radioErr = 1;
+            }
+
+            if (NRF24_ReadStatus(&radio2, &status) == 0) 
+            {
+                if (status != 0x0E) radio2.radioErr = 1;
+            }
+
 
             // End of initialization
             GPIO_WriteBit(GPIOC, LED_RED, Bit_RESET);
             GPIO_WriteBit(GPIOD, LED_BLUE, Bit_RESET);
-            device.state = STATE_CONN_START;                                 
+
+            if (radio1.radioErr == 1 || radio2.radioErr == 1)
+            {
+                device.state = STATE_FAIL;          // Trigger init fail
+            } 
+            else
+            {
+                device.state = STATE_CONN_START;    // OK... continue
+            }
+                                             
             break;
 
 
@@ -87,8 +123,12 @@ int main(void)
 
 
             // If pairing is successfull UNCOMMENT
-            if (device.conn_status == CONN_STATUS_OK) device.state = STATE_CONN_OK;
-        
+            if (device.conn_status == CONN_STATUS_OK) 
+            {
+                GPIO_WriteBit(GPIOD, LED_BLUE, Bit_SET);
+                device.state = STATE_CONN_OK;
+            }
+            
             // If pairing is NOT successfull -> IRQ timeout trigger 
 
             break;
@@ -131,6 +171,7 @@ int main(void)
             // Report failed connection
             char statusLabel[] = "Connection FAILED!\r\n";
             UartSendBuffer((uint8_t*)statusLabel, strlen(statusLabel));
+            GPIO_WriteBit(GPIOC, LED_RED, Bit_SET);                     // Indicate error
             device.state = STATE_IDLE;                                  // Go in idle mode and wait on user response
 
             break;
@@ -141,6 +182,15 @@ int main(void)
         case STATE_IDLE:
             
             // DO NOTHING... Wait on user
+
+            break;
+
+
+
+        // State: Fail state if device / radion fail to initialize
+        case STATE_FAIL:
+            
+            // DO NOTHING... Fast red LED blinks
 
             break;
 
@@ -232,7 +282,7 @@ void LinkPinout_Init(void)
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPD;
     GPIO_Init(GPIOC, &GPIO_InitStructure);
 
-    GPIO_EXTILineConfig(GPIO_PortSourceGPIOD, GPIO_PinSource1);
+    GPIO_EXTILineConfig(GPIO_PortSourceGPIOC, GPIO_PinSource1);
     EXTI_InitStructure.EXTI_Line = EXTI_Line1;
     EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
     EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising;
@@ -290,7 +340,7 @@ void TIM_INT_Init(void)
 
     // Set values of registers
     uint16_t arr = 59999;
-    uint16_t psc = 15; //15
+    uint16_t psc = 15; 
 
     RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);
 
@@ -301,14 +351,18 @@ void TIM_INT_Init(void)
     TIM_TimeBaseInit(TIM2, &TIMBase_InitStruct);
 
     TIM_ClearFlag(TIM2, TIM_FLAG_Update);
+    NVIC_ClearPendingIRQ(TIM2_IRQn);
     TIM_ITConfig(TIM2, TIM_IT_Update, ENABLE);
 
     NVIC_InitStruct.NVIC_IRQChannel = TIM2_IRQn;
     NVIC_InitStruct.NVIC_IRQChannelPreemptionPriority = 1;
-    NVIC_InitStruct.NVIC_IRQChannelSubPriority = 1;
+    NVIC_InitStruct.NVIC_IRQChannelSubPriority = 2;
     NVIC_InitStruct.NVIC_IRQChannelCmd = ENABLE;
 
     NVIC_Init(&NVIC_InitStruct);
+    #ifdef DEBUG
+        Delay_Ms(50);
+    #endif
     TIM_Cmd(TIM2, ENABLE);
 }
 
@@ -327,16 +381,20 @@ void USART1_Init(void)
     USART_InitTypeDef USART_InitStructure = {0};
     NVIC_InitTypeDef NVIC_InitStructure = {0};
 
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOD | RCC_APB2Periph_USART1, ENABLE);
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOD | RCC_APB2Periph_USART1 | RCC_APB2Periph_AFIO, ENABLE);
+
+    // Pin remaping (TX=PD6, RX=PD5)
+    AFIO->PCFR1 &= ~((1U << 21) | (1U << 2));  // clear USART1_RM1 (bit21) and USART1_RM (bit2)
+    AFIO->PCFR1 |=  (1U << 21);                // set USART1_RM1=1, USART1_RM=0  -> 10b
 
     // Set pin USART TX
-    GPIO_InitStructure.GPIO_Pin = USART_TX;
+    GPIO_InitStructure.GPIO_Pin = USART_RX;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_30MHz;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
     GPIO_Init(GPIOD, &GPIO_InitStructure);
 
     // Set pin: USART RX
-    GPIO_InitStructure.GPIO_Pin = USART_RX;
+    GPIO_InitStructure.GPIO_Pin = USART_TX;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_30MHz;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
     GPIO_Init(GPIOD, &GPIO_InitStructure);
@@ -435,12 +493,12 @@ void SPI1_Init(void)
     GPIO_InitStructure.GPIO_Pin   = NRF_SCK | NRF_MOSI;
     GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_AF_PP;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-    GPIO_Init(GPIOA, &GPIO_InitStructure);
+    GPIO_Init(GPIOC, &GPIO_InitStructure);
 
     // Configure MISO as floating input
     GPIO_InitStructure.GPIO_Pin  = NRF_MISO;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
-    GPIO_Init(GPIOA, &GPIO_InitStructure);
+    GPIO_Init(GPIOC, &GPIO_InitStructure);
 
     // Fill handle and init struct
     hspi1.Init.SPI_Direction = SPI_Direction_2Lines_FullDuplex;     // Two line SPI
@@ -451,7 +509,7 @@ void SPI1_Init(void)
     hspi1.Init.SPI_NSS = SPI_NSS_Soft;                              // Software NSS
     hspi1.Init.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_16;    // fPCLK/16
     hspi1.Init.SPI_FirstBit = SPI_FirstBit_MSB;                     // MSB bit first
-    //hspi1.SPI_CRCPolynomial = 7;                                // CRC lenght
+    //hspi1.SPI_CRCPolynomial = 7;                                  // CRC lenght
 
     // Apply config and enable
     SPI_Init(SPI1, &hspi1.Init);                                    // Apply SPI configurations
@@ -552,10 +610,11 @@ void USART1_IRQHandler(void)
     if(USART_GetITStatus(USART1, USART_IT_RXNE) != RESET)
     {
         // Save received data
-        buffers.buffer_UART[buffers.cntBuffer_UART] = USART_ReceiveData(USART1);
+        uint8_t data = USART_ReceiveData(USART1); // Read only once
+        buffers.buffer_UART[buffers.cntBuffer_UART] = data;
 
         // Detect end of data string
-        if (USART_ReceiveData(USART1) == '\n' || USART_ReceiveData(USART1) == '\r')
+        if (data == '\n' || data == '\r')
         {
             device.flag_USB_RX_end = 1;
             buffers.cntBuffer_UART = 0;
@@ -566,7 +625,8 @@ void USART1_IRQHandler(void)
             buffers.cntBuffer_UART++;
         }
 
-        USART_ClearITPendingBit(USART1, USART_IT_RXNE); // Clear RX flag (otherwise constantly triggered IRQ)
+        // Clear RX flag (otherwise constantly triggered IRQ)
+        USART_ClearITPendingBit(USART1, USART_IT_RXNE); 
     }
 }
 
@@ -585,23 +645,28 @@ void USART1_IRQHandler(void)
 void EXTI7_0_IRQHandler(void)
 {
     // External button - reconnect (no debauncing logic)
-    if(EXTI_GetITStatus(EXTI_Line4)!=RESET && device.state != STATE_CONN_START)
+    if(EXTI_GetITStatus(EXTI_Line4) != RESET)
     {
-        device.state = STATE_CONN_START;
+        if (device.state != STATE_CONN_START)
+        {
+            device.state = STATE_CONN_START;
+            GPIO_WriteBit(GPIOC, LED_RED, Bit_RESET);
+        }
+
         EXTI_ClearITPendingBit(EXTI_Line4);     // Clear Flag
     }
 
     // Radio 1 IRQ pin
-    if(EXTI_GetITStatus(EXTI_Line3)!=RESET && device.conn_status == CONN_STATUS_OK)
+    if(EXTI_GetITStatus(EXTI_Line3) != RESET)
     {
-        radio1.flag_IRQ = 1;
+        if (device.conn_status == CONN_STATUS_OK) radio1.flag_IRQ = 1;
         EXTI_ClearITPendingBit(EXTI_Line3);     // Clear Flag
     }
 
     // Radio 2 IRQ pin
-    if(EXTI_GetITStatus(EXTI_Line1)!=RESET && device.conn_status == CONN_STATUS_OK)
+    if(EXTI_GetITStatus(EXTI_Line1) != RESET)
     {
-        radio2.flag_IRQ = 1;
+        if (device.conn_status == CONN_STATUS_OK) radio2.flag_IRQ = 1;
         EXTI_ClearITPendingBit(EXTI_Line1);     // Clear Flag
     }
 }
@@ -616,8 +681,10 @@ void EXTI7_0_IRQHandler(void)
  */
 void TIM2_IRQHandler(void)
 {
+
     static uint8_t cntBlink = 0;
     static uint16_t cntConnectTimeout = 0;
+    static uint8_t cntFailBlink = 0;
 
     if (TIM_GetITStatus(TIM2, TIM_IT_Update) != RESET)
     {
@@ -647,8 +714,21 @@ void TIM2_IRQHandler(void)
 
         // Reset conter for connection timeout if connection is established
         if (device.conn_status == CONN_STATUS_OK && cntConnectTimeout > 0) cntConnectTimeout = 0;
-    
-        TIM_ClearITPendingBit(TIM2, TIM_IT_Update);   // Acknowledge    
+
+        // Fail indicator
+        if (device.state == STATE_FAIL)
+        {
+            cntFailBlink++;
+
+            // Fast red LED blink
+            if (cntFailBlink >= 4)
+            {
+                GPIO_WriteBit(GPIOC, LED_RED, (BitAction)!GPIO_ReadOutputDataBit(GPIOC, LED_RED));
+                cntFailBlink = 0;
+            }
+        }
+
+        TIM_ClearITPendingBit(TIM2, TIM_IT_Update);   // Clear flag            
     }
 }
 
