@@ -73,16 +73,18 @@ typedef struct{
     uint16_t    pct_tx_cnt;             // Send packets counter
     uint16_t    pct_rx_cnt;             // Received packets counter
     uint16_t    pct_fail_cnt;           // Counter for failed packets (calculated based on packet number - if next packet num. is not +1 -> pct_fail_cnt++)
-    uint8_t     flag_USB_RX_end;        // Flag for end of received message
 } DEVICE;
 
 
 typedef struct {
     // PC -> Drone and Drone -> PC with IRQs //
     // Used for parameters and mid flyght to send commands to drone
-    uint8_t     buffer_UART[10];        // Buffer for saving USB data
+    uint8_t     buffer_UART[64];        // Buffer for saving USB data
     uint8_t     cntBuffer_UART;         // Counter for USB buffer
-    uint8_t     buffer_RF[10];          // Buffer for RF data
+    uint8_t     flag_new_rx_data;       // Flag indicating a new data has arrived (packet is not complete)
+    uint8_t     flag_USB_RX_end;        // Flag for new complete USB command (PC -> link)
+    
+    uint8_t     buffer_RF[64];          // Buffer for RF data
     uint8_t     cntBuffer_RF;           // Counter for RF buffer
 
     // Drone -> PC [DMA] //

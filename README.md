@@ -1,47 +1,106 @@
-# Amon_Link
-Project Status:
-PROJECT IN PROGRESS...
+# Amon Link
 
-Amon_Link is an open-source electronic module designed for RF communication between a PC-based Ground Control system and the Amon lander drone. It serves as a reliable and efficient communication bridge, utilizing dual radios and a compact, low-power design.
+**Project Status:** In Progress  
 
-![Amon Link](https://github.com/TilenTinta/Amon_Link/blob/main/Images/Assembly%20v5.png)
+**Short description:** USB-powered RF bridge between **Amon Ground Control** (PC) and the **Amon Lander** drone, built around the WCH **CH32V003F4P6** MCU with **dual NRF24L01 + RFX2401C** radios for robust range. 
+
+> Part of the Amon Lander project:
+>
+> - **Amon Lander** — overall vehicle, frame, test/control SW, and data  
+>   https://github.com/TilenTinta/Amon_Lander
+> - **Amon Board** — flight controller hardware & firmware  
+>   https://github.com/TilenTinta/Amon_Board
+> - **Amon Ground Control** — desktop GCS for telemetry & control  
+>   https://github.com/TilenTinta/Amon_Ground_Control
+
+![Amon Link](https://github.com/TilenTinta/Amon_Link/blob/main/Images/Assembly%20v5.png)  
+
 ---
 
-# Features
-## Hardware
-- Microcontroller: WCH CH32V003F4P6
-- Power Supply: USB-powered with onboard LDO regulator (3.3V)
-- Connectivity: USB Type-C
-- RF Communication:
-    - Dual NRF24L01 radios with RFX2401C (LNA + PA) for extended range and improved signal quality
+## Table of Contents
 
-## Diagnostics & Controls:
-- Status LED indicator
-- Button for manual reconnecting
+- [Overview](#overview)
+- [Features](#features)
+  - [Hardware](#hardware)
+  - [Software & Compatibility](#software--compatibility)
+  - [Diagnostics & Controls](#diagnostics--controls)
+- [Quick Start](#quick-start)
+- [Flashing Firmware](#flashing-firmware)
+- [Debugging](#debugging)
+  - [LED Status Codes](#led-status-codes)
+  - [Button Usage](#button-usage)
+- [Repository Structure](#repository-structure)
+- [Roadmap](#roadmap)
+- [Status & Disclaimer](#status--disclaimer)
+- [License](#license)
+- [Acknowledgments](#acknowledgments)
 
-## Software & Compatibility
-- Firmware Development: C in MounRiver Studio IDE
-- Supported Platforms: Compatible with Windows, Linux, and macOS for Ground Control applications
-- Driver Requirements: CH340G IC for USB communication requires appropriate drivers (if needed)
-- Custom bootloader for USB firmware update
 ---
 
-# Usage
-## Setting Up
+## Overview
 
-Hardware Setup:
-- Connect the board via USB-C to the PC.
-- Ensure proper antenna placement for optimal RF performance.
+**Amon Link** is a compact, low-power **RF communication bridge** that connects a PC-based Ground Control application to the Amon Lander over 2.4 GHz radios. It prioritizes reliability by pairing **two NRF24L01 modules** with the **RFX2401C PA/LNA** front-end for extended range and improved link quality. The board is powered from **USB Type‑C** and integrates a **3.3 V LDO**. 
 
-## Flashing Firmware:
-- Use MounRiver Studio IDE to compile and upload the firmware.
+---
+
+## Features
+
+### Hardware
+
+- **MCU:** WCH **CH32V003F4P6**. 
+- **Power:** USB‑powered with onboard **3.3 V LDO**. 
+- **Connector:** **USB Type‑C**. 
+- **RF Link:** Dual **NRF24L01** radios with **RFX2401C (PA+LNA)** for long range and better SNR. 
+- **Indicators/Controls:** Status LED and **reconnect button**. 
+
+### Software & Compatibility
+
+- **Firmware:** C, developed in **MounRiver Studio IDE**. 
+- **USB–UART:** **CH340G** bridge (install drivers if needed). 
+- **Platforms:** Works with **Windows, Linux, and macOS** Ground Control apps. 
+- **Updates:** **Custom bootloader** supports USB firmware updates. 
+
+### Diagnostics & Controls
+
+- **Status LED** for connection state. 
+- **Button** to trigger manual reconnect. 
+
+---
+
+## Quick Start
+
+1. **Connect** the Amon Link board to your PC using **USB‑C**.   
+2. **Install drivers** if required for **CH340G**.   
+3. **Place antennas** for the two NRF24L01 radios to ensure clear line‑of‑sight where possible.   
+4. **Launch** the Amon Ground Control application and select the appropriate COM/tty port. (See your GCS docs.)
+
+---
+
+## Flashing Firmware
+
+- Open the project in **MounRiver Studio IDE**, compile, and **upload** to the **CH32V003F4P6** MCU. 
+
+> The board also includes a **custom bootloader** for **USB firmware updates** when supported by the desktop toolchain. 
+
+---
 
 ## Debugging
-LED Status Indications:
-- Blinking red: device initialization
-- Blinking blue: connecting...
-- Solid blue: Connection established
-- Solid red: Connection failed
 
-## Button Usage:
-Press to trigger reconnecting 
+### LED Status Codes  
+
+| LED Pattern     | Meaning                   |
+|-----------------|---------------------------|
+| Blinking **red**  | Device initialization     |
+| Blinking **blue** | Connecting…               |
+| Solid **blue**    | Connection established    |
+| Solid **red**     | Connection failed         |
+
+### Button Usage  
+
+Press the **button** to trigger a manual **reconnect** attempt.
+
+---
+
+## Status & Disclaimer
+
+**In active development.** The hardware and firmware are usable, but changes are ongoing; expect rough edges as features evolve. 

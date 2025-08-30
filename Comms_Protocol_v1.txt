@@ -1,0 +1,147 @@
+Comms Protocol v1 (PC ⇄ LINK ⇄ DRONE)
+Date: 2025-08-24
+
+1) Entities & IDs
+	- Roles:
+	  PC (host via CH340), LINK (your CH32V003 board), DRONE (air unit)
+	- Logical IDs (1 byte):
+	  0x01 = PC
+	  0x10 = Link #0
+	  0x20 = Drone #0
+	  0xFF = Broadcast
+
+2) Layers
+	- UART Transport (PC ⇄ LINK):
+	  Byte stream → framing + integrity.
+	  Framing: SOF(0xAA), LEN, HEADER, PAYLOAD, CRC16.
+	- RF Transport (LINK ⇄ DRONE):
+	  nRF24L01, 32-byte max payload.
+	  Use Dynamic Payload Length (DPL) + built-in CRC (1B or 2B).
+	  No app-level timeouts/retries.
+
+3) Headers & Framing
+	3.1 UART frame (PC ⇄ LINK)
+	- Layout (little-endian for multibyte fields):
+	  SOF    (1B): 0xAA
+	  LEN    (1B): number of bytes in HEADER+PAYLOAD (0..255)
+	  HEADER (6B):
+		VER    (1B) : protocol version (start with 0x01)
+		FLAGS  (1B) : bitfield (see §4)
+		SRC    (1B) : logical source ID
+		DST    (1B) : logical destination ID
+		OPCODE (1B) : command (see §5)
+		PLEN   (1B) : payload length (0..N)
+	  PAYLOAD (PLEN bytes)
+	  CRC16  (2B): CRC-16/CCITT (poly 0x1021, init 0xFFFF) over LEN..PAYLOAD
+	- Parsing:
+	  Hunt SOF, read LEN, then read LEN+2 bytes, verify CRC; drop on fail.
+
+	3.2 RF frame (LINK ⇄ DRONE)
+		- Compact layout (fits nRF DPL ≤ 32):
+		  VER(1) | FLAGS(1) | SRC(1) | DST(1) | OPCODE(1) | PLEN(1) | PAYLOAD(0..26)
+		- Notes:
+		  Rely on nRF CRC; start with Auto-ACK OFF for simplicity.
+
+4) Flags (1 byte)
+	- bit0: ACK    (this frame is a reply)
+	- bit1: ERR    (processing error; payload carries error code)
+	- bit2: STREAM (telemetry stream frame)
+	- bit3: FRAG   (fragmented payload; optional future use)
+	- bit4..7: reserved (0)
+
+5) Opcodes (1 byte)
+	- 0x00: NOP / Reserved
+	- 0x01: PING (req) / PONG (reply with status TLVs)
+	- 0x02: ERROR_REPORT (payload: error code + info)
+	- 0x10: PAIR_STATUS
+	- 0x11: PAIR_START
+	- 0x20: LINK_GET_PARAMS
+	- 0x21: LINK_SET_PARAMS
+	- 0x30: DRONE_GET_PARAMS
+	- 0x31: DRONE_SET_PARAMS
+	- 0x32: DRONE_SET_STATE   (arm/disarm/modes)
+	- 0x33: DRONE_COMMAND     (calibrate, save…)
+	- 0x40: TELEMETRY (STREAM; sub-type via TLVs)
+
+6) Payload format — TLV (Type-Length-Value)
+	- TLV unit: T(1B), L(1B), V(L bytes)
+	- Common TLVs:
+	  0x01 Battery mV (u16 LE)
+	  0x02 RSSI/Link quality (u8)
+	  0x03 FW version (ascii)
+	  0x10 RF Channel (u8)
+	  0x11 Address length (u8=3/4/5)
+	  0x12 Data rate (u8: 0=250kbps,1=1Mbps,2=2Mbps)
+	  0x13 Power level (u8)
+	  0x20 Drone mode (u8)
+	  0x21 Calib target (u8)
+	  0x30 Attitude roll/pitch/yaw (i16 each, deg*100)
+	  0x31 IMU raw ax/ay/az,gx/gy/gz (i16 each)
+	  0x32 GPS lat(i32 1e-7deg), lon(i32), alt_cm(i32)
+	  0x7F Error code (u8) + detail (optional ascii)
+
+7) Pairing (minimal flow, no security)
+	- PC→LINK: PAIR_START (dst=0xFF). Link broadcasts on pairing channel(s).
+	- DRONE→LINK: PAIR_STATUS with TLVs (caps/version).
+	- LINK→PC: forwards offers via PAIR_STATUS.
+	- PC→LINK: DRONE_SET_PARAMS (RF channel + addresses).
+	- LINK: stores params, switches to normal mode, replies PAIR_STATUS.
+
+8) Telemetry
+	- OPCODE=0x40; set FLAGS.STREAM=1.
+	- Use TLV sub-types (attitude, IMU, battery, GPS…).
+	- Suggested rates: attitude 50 Hz, IMU 100 Hz, battery 1–5 Hz, GPS 5–10 Hz.
+	- Keep RF payload ≤ 26 bytes (with 1B nRF CRC) per frame. Split different TLVs across frames if needed.
+
+9) Error handling (simple)
+	- On parse/validation failure, reply with FLAGS.ERR=1, same OPCODE, payload TLV(0x7F)=errCode.
+	- Minimal error codes: 1=BadHeader, 2=CRCFail(UART), 3=BadOpcode, 4=BadTLV, 5=TooLong, 6=Unsupported.
+
+10) UART RX implementation steps (no timeouts/retries)
+	- State machine:
+	  HUNT_SOF → READ_LEN → READ_FRAME → CRC → DISPATCH
+	- On success, queue message: {src,dst,opcode,flags,payload,len}. On failure, optional ERR reply.
+
+11) RF implementation steps (nRF24L01)
+	- Init radio:
+	  CONFIG(CRC on), EN_AA=0x00 (no auto-ack), EN_RXADDR pipe0, SETUP_AW, RF_CH, RF_SETUP,
+	  FEATURE+DYNPD for DPL, STATUS=0x70 (clear IRQ), FLUSH_RX/TX.
+	- TX path (PC→Link→Drone): build RF frame (6+PLEN), Tx on pipe0.
+	- RX path (Drone→Link→PC): on Rx, forward to PC as a UART frame.
+
+12) Mapping from original commands
+	- Ping/Status → 0x01 with status TLVs
+	- Pair status/start → 0x10/0x11
+	- Link params get/set → 0x20/0x21
+	- Drone params get/set → 0x30/0x31
+	- Drone state change → 0x32
+	- Drone commands → 0x33
+	- Telemetry → 0x40 with TLVs
+
+13) Examples
+	13.1 PC→Link (UART) “Ping Drone”
+	  AA | 08 | 01 00 01 20 01 00 | CRC16
+	  LEN=08; VER=01, FLAGS=00, SRC=01, DST=20, OPCODE=01, PLEN=00
+
+	13.2 Link→Drone (RF) “Ping”
+	  01 00 20 20 01 00
+
+	13.3 Drone→Link (RF) “Pong + Battery”
+	  01 01 20 20 01 03 | 01 01 E4
+
+	13.4 Link→PC (UART) “Pong forwarded”
+	  Same as request header but FLAGS.ACK=1; payload carries TLV(s).
+
+14) Minimal integration plan (no code)
+	- Define constants/enums: IDs, flags, opcodes, TLV types.
+	- UART module: frame builder & parser with CRC16; queue for parsed messages.
+	- RF module: init + TX/RX helpers for 6+PLEN format.
+	- Router: DST==Link→handle; DST==Drone→wrap to RF; RF→UART forward.
+	- Test path: Ping → Pong roundtrip. Then add telemetry.
+	- Add pairing flow from §7 later.
+
+15) Decisions locked in v1
+	- Version = 1; little-endian multibyte.
+	- UART: SOF 0xAA, length-prefixed, CRC-16/CCITT over LEN..PAYLOAD.
+	- RF: nRF DPL + CRC; no app retries/timeouts/security.
+	- Max UART payload = 255; Max RF payload (PAYLOAD) ≤ 26 bytes.
