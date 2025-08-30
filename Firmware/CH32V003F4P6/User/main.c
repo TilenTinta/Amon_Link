@@ -99,6 +99,8 @@ int main(void)
             }
 
 
+
+
             // End of initialization
             GPIO_WriteBit(GPIOC, LED_RED, Bit_RESET);
             GPIO_WriteBit(GPIOD, LED_BLUE, Bit_RESET);
@@ -610,20 +612,18 @@ void USART1_IRQHandler(void)
     if(USART_GetITStatus(USART1, USART_IT_RXNE) != RESET)
     {
         // Save received data
-        uint8_t data = USART_ReceiveData(USART1); // Read only once
+        uint8_t data = USART_ReceiveData(USART1);           // Read only once
         buffers.buffer_UART[buffers.cntBuffer_UART] = data;
+        buffers.cntBuffer_UART++;
 
-        // Detect end of data string
-        if (data == '\n' || data == '\r')
+        // Detect overflow
+        if (buffers.cntBuffer_UART >= sizeof(buffers.cntBuffer_UART))
         {
-            device.flag_USB_RX_end = 1;
             buffers.cntBuffer_UART = 0;
         }
-        else
-        {
-            device.flag_USB_RX_end = 0;
-            buffers.cntBuffer_UART++;
-        }
+
+        // Indicate new data received
+        if (buffers.cntBuffer_UART > 0) buffers.flag_new_rx_data = 1;
 
         // Clear RX flag (otherwise constantly triggered IRQ)
         USART_ClearITPendingBit(USART1, USART_IT_RXNE); 
