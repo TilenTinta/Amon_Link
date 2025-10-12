@@ -10,18 +10,31 @@
 #include "NRF24L01.h"
 
 /* Private functions - used to manipulate pin states */
-static inline void nrf_csn_low (nRF24L01 *dev) { GPIO_ResetBits(dev->CS_Port, dev->CS_Pin); }   // Reset CS pin
+static inline void nrf_csn_low (nRF24L01 *dev)      // Reset CS pin
+{ 
+    GPIO_ResetBits(dev->CS_Port, dev->CS_Pin); 
+}   
 
-static inline void nrf_csn_high(nRF24L01 *dev) { GPIO_SetBits  (dev->CS_Port, dev->CS_Pin); }   // Set CS pin
+static inline void nrf_csn_high(nRF24L01 *dev)      // Set CS pin
+{ 
+    GPIO_SetBits(dev->CS_Port, dev->CS_Pin); 
+}   
 
-static inline void nrf_ce_low  (nRF24L01 *dev) { GPIO_ResetBits(dev->CE_Port, dev->CE_Pin); }   // Reset CE pin
+static inline void nrf_ce_low  (nRF24L01 *dev)      // Reset CE pin
+{ 
+    GPIO_ResetBits(dev->CE_Port, dev->CE_Pin); 
+}   
 
-static inline void nrf_ce_high (nRF24L01 *dev) { GPIO_SetBits  (dev->CE_Port, dev->CE_Pin); }   // Set CE pin
+static inline void nrf_ce_high (nRF24L01 *dev)      // Set CE pin
+{ 
+    GPIO_SetBits(dev->CE_Port, dev->CE_Pin); 
+}   
 
-static inline uint8_t nrf_spi_txrx(nRF24L01 *dev, uint8_t byte)                                 // Send and receive data over SPI
+static inline uint8_t nrf_spi_txrx(nRF24L01 *dev, uint8_t byte)     // Send and receive data over SPI
 {
     while (SPI_I2S_GetFlagStatus(dev->SPIx, SPI_I2S_FLAG_TXE) == RESET) { }
     SPI_I2S_SendData(dev->SPIx, byte);
+
     while (SPI_I2S_GetFlagStatus(dev->SPIx, SPI_I2S_FLAG_RXNE) == RESET) { }
     return (uint8_t)SPI_I2S_ReceiveData(dev->SPIx);
 }

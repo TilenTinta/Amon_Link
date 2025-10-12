@@ -17,9 +17,29 @@ void EXTI7_0_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
 void TIM2_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
 
 
+
+/*###########################################################################################################################################################*/
+/* Functions */
+
+void USART1_Init(void);
+void SPI1_Init(void);
+void LinkPinout_Init(void);
+void TIM_INT_Init(void);
+void UartSendBuffer(uint8_t* buffer, uint16_t length);
+void UART_buffer_clear(void);
+void USART_DMA_TX_Config();
+void Start_DMA_USART_TX(uint8_t len);
+void SPI_DMA_RX_Config();
+void Start_DMA_SPI_RX(void);
+
+/*###########################################################################################################################################################*/
+
+
+
 /* Global define */
 DEVICE device;                                              // Device variables struct
 BUFFERS buffers;                                            // Device buffers
+//UART_PACKET uart_packet;                                    // UART packet parts
 nRF24L01 radio1;                                            // Radio variables 1
 nRF24L01 radio2;                                            // Radio variables 2
 SPI_HandleTypeDef hspi1;                                    // SPI handle
@@ -34,7 +54,7 @@ int main(void)
     LinkPinout_Init();                                      // Init the pinout
     TIM_INT_Init();                                         // Init the timer
     USART1_Init();                                          // Init USART
-    USART_Printf_Init(115200);                              // Enable USART
+    //USART_Printf_Init(115200);                              // Enable USART
     USART_DMA_TX_Config();                                  // Configure DMA channel 4 - USART TX (UDP style telemetry data)
     SPI1_Init();                                            // Init SPI
     //SPI_DMA_RX_Config();                                    // Configure DMA channel 2 - SPI RX (UDP style telemetry data)
@@ -53,6 +73,7 @@ int main(void)
         GPIO_WriteBit(GPIOD, NRF_CS2, Bit_SET);         
 
         device.device_id = DBGMCU_GetCHIPID();              // Get unic device ID
+        device.version = SW_VER;                            // Version of software
         device.state = STATE_INIT;                          // Start device state
         device.conn_status = CONN_STATUS_NOK;               // Connection status
         device.conn_type = STATE_DATA_TRANSMIT;             // Communication type - clasic
@@ -62,6 +83,15 @@ int main(void)
 
     while(1)
     {
+
+        // If USB packet is received - decode
+        if (buffers.flag_USB_RX_end == 1) 
+        {
+            // TODO: Decode
+            UART_decode(buffers.buffer_UART, buffers.buffer_RF, &buffers.flag_new_rf_tx_data);
+            UART_buffer_clear();
+        }
+
         /* MAIN STATE MACHINE */
         switch(device.state)
         {
@@ -140,20 +170,23 @@ int main(void)
         // State: Device and drone are connected, data can be send/received
         case STATE_CONN_OK:
 
-            // Select what type of communication will be used
+            // Select what type of communication will be used (Drone to PC)
             switch (device.conn_type) 
             {
+                
                 // Clasic data transmition - IRQ, parameters to/from drone
                 case STATE_DATA_TRANSMIT:
-                // TODO: data manipulation logic
+                    // TODO: Decode
+                
 
                 break;
 
                 // High speed data transmition - UDP style
                 case STATE_DATA_STREAM:
-                // TODO: Optimize for dma (disable all timer interrupts, SPI optimization)
-                //Start_DMA_USART_TX(sizeof(buffers.bufferDMA_RF_UART));
-                //UartSendBuffer((uint8_t*)&device.device_id, sizeof(device.device_id));
+                    // TODO: Optimize for dma (disable all timer interrupts, SPI optimization)
+                    //Start_DMA_USART_TX(sizeof(buffers.bufferDMA_RF_UART));
+                    //UartSendBuffer((uint8_t*)&device.device_id, sizeof(device.device_id));
+                    
 
                 break;
 
@@ -183,8 +216,8 @@ int main(void)
         // State: Idle mode where device just waits on user response
         case STATE_IDLE:
             
-            // DO NOTHING... Wait on user
-
+            // DO NOTHING... Wait on user (remote or physical)
+            
             break;
 
 
@@ -503,20 +536,20 @@ void SPI1_Init(void)
     GPIO_Init(GPIOC, &GPIO_InitStructure);
 
     // Fill handle and init struct
-    hspi1.Init.SPI_Direction = SPI_Direction_2Lines_FullDuplex;     // Two line SPI
-    hspi1.Init.SPI_Mode = SPI_Mode_Master;                          // SPI Mode - Master
-    hspi1.Init.SPI_DataSize = SPI_DataSize_8b;                      // Data lenght
-    hspi1.Init.SPI_CPOL = SPI_CPOL_Low;                             // Idle low
-    hspi1.Init.SPI_CPHA = SPI_CPHA_1Edge;                           // 1st edge
-    hspi1.Init.SPI_NSS = SPI_NSS_Soft;                              // Software NSS
-    hspi1.Init.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_16;    // fPCLK/16
-    hspi1.Init.SPI_FirstBit = SPI_FirstBit_MSB;                     // MSB bit first
-    //hspi1.SPI_CRCPolynomial = 7;                                  // CRC lenght
+    hspi1.Init.SPI_Direction = SPI_Direction_2Lines_FullDuplex;                 // Two line SPI
+    hspi1.Init.SPI_Mode = SPI_Mode_Master;                                      // SPI Mode - Master
+    hspi1.Init.SPI_DataSize = SPI_DataSize_8b;                                  // Data lenght
+    hspi1.Init.SPI_CPOL = SPI_CPOL_Low;                                         // Idle low
+    hspi1.Init.SPI_CPHA = SPI_CPHA_1Edge;                                       // 1st edge
+    hspi1.Init.SPI_NSS = SPI_NSS_Soft;                                          // Software NSS
+    hspi1.Init.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_16;                // fPCLK/16
+    hspi1.Init.SPI_FirstBit = SPI_FirstBit_MSB;                                 // MSB bit first
+    //hspi1.SPI_CRCPolynomial = 7;                                              // CRC lenght
 
     // Apply config and enable
-    SPI_Init(SPI1, &hspi1.Init);                                    // Apply SPI configurations
+    SPI_Init(SPI1, &hspi1.Init);                                                // Apply SPI configurations
     //SPI_CalculateCRC(SPI_InitStructure.Instance, DISABLE);         
-    SPI_Cmd(SPI1, ENABLE);                                          // Enable SPI
+    SPI_Cmd(SPI1, ENABLE);                                                      // Enable SPI
 
 }
 
@@ -582,11 +615,11 @@ void Start_DMA_SPI_RX(void)
  */
 void UartSendBuffer(uint8_t* buffer, uint16_t length)
 {
-    DMA_Cmd(DMA1_Channel4, DISABLE);                                 // Disable DMA
+    DMA_Cmd(DMA1_Channel4, DISABLE);                                            // Disable DMA
 
     for(uint16_t cnt = 0; cnt < length; cnt++)
     {
-        while(USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET) // Waiting for sending finish
+        while(USART_GetFlagStatus(USART1, USART_FLAG_TXE) == RESET)             // Waiting for sending finish
         {
             // Wait, do nothing
         }
@@ -611,22 +644,51 @@ void USART1_IRQHandler(void)
 {
     if(USART_GetITStatus(USART1, USART_IT_RXNE) != RESET)
     {
+        static uint8_t len_new_rx_data = 0;
+        static uint8_t cntBuffer_UART = 0;
+
         // Save received data
-        uint8_t data = USART_ReceiveData(USART1);           // Read only once
-        buffers.buffer_UART[buffers.cntBuffer_UART] = data;
-        buffers.cntBuffer_UART++;
+        uint8_t data = USART_ReceiveData(USART1);                               // Read only once
+        buffers.buffer_UART[cntBuffer_UART] = data;
+        cntBuffer_UART++;
 
-        // Detect overflow
-        if (buffers.cntBuffer_UART >= sizeof(buffers.cntBuffer_UART))
+        // Detect start of frame and set flags
+        if (buffers.flag_new_uart_rx_data == 1 && len_new_rx_data == 0)         // Flag for new packet, but no lenght of packet
         {
-            buffers.cntBuffer_UART = 0;
+            len_new_rx_data = data;                                             // Save packet lenght
+            buffers.flag_new_uart_rx_data = 0;                                  // Clear flag for new data
         }
-
-        // Indicate new data received
-        if (buffers.cntBuffer_UART > 0) buffers.flag_new_rx_data = 1;
+        else if (data == SIG_SOF && len_new_rx_data == 0 && len_new_rx_data == 0)  // No flag for new packet and SOA packet
+        {
+            buffers.flag_new_uart_rx_data = 1;                                  // Indicate new data received
+            buffers.flag_USB_RX_end = 0;                                        // Clear end of packet flag
+            len_new_rx_data = 0;                                                // Clear packet counter
+        }
+        else if (cntBuffer_UART >= (len_new_rx_data + 2))                       // Detect end of complete packet
+        {
+            buffers.flag_USB_RX_end = 1;                                        // Indicate end of packet
+            cntBuffer_UART = 0;                                                 // Clear UART counter
+        }
 
         // Clear RX flag (otherwise constantly triggered IRQ)
         USART_ClearITPendingBit(USART1, USART_IT_RXNE); 
+    }
+}
+
+
+/*********************************************************************
+ * @fn      UART_buffer_clear
+ *
+ * @brief   Clear data in UART buffer
+ *
+ * @return  none
+ */
+void UART_buffer_clear(void)
+{
+    // Clear buffer
+    for (int i = 0; i < sizeof(buffers.buffer_UART); i++)
+    {
+        buffers.buffer_UART[i] = 0;
     }
 }
 
@@ -706,9 +768,9 @@ void TIM2_IRQHandler(void)
             if (cntConnectTimeout >= 500)
             {
                 cntConnectTimeout = 0;
-                device.state = STATE_CONN_FAIL;             // failed connection
-                device.conn_status = CONN_STATUS_NOK;       // discnnected
-                GPIO_WriteBit(GPIOD, LED_BLUE, Bit_RESET);  // Turn off blue LED
+                device.state = STATE_CONN_FAIL;                                 // failed connection
+                device.conn_status = CONN_STATUS_NOK;                           // discnnected
+                GPIO_WriteBit(GPIOD, LED_BLUE, Bit_RESET);                      // Turn off blue LED
             }
         }
 

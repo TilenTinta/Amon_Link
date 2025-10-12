@@ -21,20 +21,20 @@ Date: 2025-08-24
 
 3) Headers & Framing
 	3.1 UART frame (PC ⇄ LINK)
-	- Layout (little-endian for multibyte fields):
-	  SOF    (1B): 0xAA
-	  LEN    (1B): number of bytes in HEADER+PAYLOAD (0..255)
-	  HEADER (6B):
-		VER    (1B) : protocol version (start with 0x01)
-		FLAGS  (1B) : bitfield (see §4)
-		SRC    (1B) : logical source ID
-		DST    (1B) : logical destination ID
-		OPCODE (1B) : command (see §5)
-		PLEN   (1B) : payload length (0..N)
-	  PAYLOAD (PLEN bytes)
-	  CRC16  (2B): CRC-16/CCITT (poly 0x1021, init 0xFFFF) over LEN..PAYLOAD
-	- Parsing:
-	  Hunt SOF, read LEN, then read LEN+2 bytes, verify CRC; drop on fail.
+		- Layout (little-endian for multibyte fields):
+		  SOF    (1B): 0xAA
+		  LEN    (1B): number of bytes in HEADER+PAYLOAD (0..255)
+		  HEADER (6B):
+			VER    (1B) : protocol version (start with 0x01)
+			FLAGS  (1B) : bitfield (see §4)
+			SRC    (1B) : logical source ID
+			DST    (1B) : logical destination ID
+			OPCODE (1B) : command (see §5)
+			PLEN   (1B) : payload length (0..N)
+		  PAYLOAD (PLEN bytes)
+		  CRC16  (2B): CRC-16/CCITT (poly 0x1021, init 0xFFFF) over LEN..PAYLOAD
+		- Parsing:
+		  Hunt SOF, read LEN, then read LEN+2 bytes, verify CRC; drop on fail.
 
 	3.2 RF frame (LINK ⇄ DRONE)
 		- Compact layout (fits nRF DPL ≤ 32):

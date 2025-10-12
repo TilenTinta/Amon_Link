@@ -22,7 +22,7 @@
 
 // Device constants
 #define DEVICE_NAME    "AMON Link"      // Name of the device
-#define SW_VER         "0.0.1"          // Software version
+#define SW_VER              1           // Software version (used in UART packets)
 #define SW_DATE        "February 2025"  // Date of software
 
 #define RADIO_NO            2           // Number of radios (1 or 2)
@@ -64,7 +64,9 @@
 /* Structs */
 
 typedef struct{
+
     uint32_t    device_id;              // MCU ID number (identifying the device)
+    uint8_t     version;                // Version of FW (based on protocol)
     uint8_t     init_done;              // Block the initialisation process
     uint8_t     state;                  // Main state machine variable
     uint8_t     conn_status;            // Flag that indicates state of connection with drone
@@ -73,45 +75,34 @@ typedef struct{
     uint16_t    pct_tx_cnt;             // Send packets counter
     uint16_t    pct_rx_cnt;             // Received packets counter
     uint16_t    pct_fail_cnt;           // Counter for failed packets (calculated based on packet number - if next packet num. is not +1 -> pct_fail_cnt++)
+
 } DEVICE;
 
 
 typedef struct {
-    // PC -> Drone and Drone -> PC with IRQs //
-    // Used for parameters and mid flyght to send commands to drone
+
+    // PC -> Drone and Drone -> PC //
     uint8_t     buffer_UART[64];        // Buffer for saving USB data
-    uint8_t     cntBuffer_UART;         // Counter for USB buffer
-    uint8_t     flag_new_rx_data;       // Flag indicating a new data has arrived (packet is not complete)
-    uint8_t     flag_USB_RX_end;        // Flag for new complete USB command (PC -> link)
+    uint8_t     flag_new_uart_rx_data;  // Flag indicating a new data has arrived (packet is not complete)
+    uint8_t     flag_new_uart_tx_data;  // Flag indicating a new data is ready to send
+    uint8_t     flag_USB_RX_end;        // Flag for new complete USB command (PC -> link) - start decode
     
     uint8_t     buffer_RF[64];          // Buffer for RF data
-    uint8_t     cntBuffer_RF;           // Counter for RF buffer
+    uint8_t     flag_new_rf_rx_data;    // Flag indicating a new data has arrived (packet is not complete)
+    uint8_t     flag_new_rf_tx_data;    // Flag indicating a new data is ready to send
 
-    // Drone -> PC [DMA] //
-    // High efficient data transfer
-    uint8_t     bufferDMA_RF_UART[3];   // Buffer for saving RF data
+    uint8_t     bufferDMA_RF_UART[64];  // Unused?
+
 } BUFFERS;
 
 
 typedef struct {
+
     SPI_TypeDef *Instance;              // SPI1
     SPI_InitTypeDef Init;               // built-in SPI struct
+    
 } SPI_HandleTypeDef;
 
-
-
-/*###########################################################################################################################################################*/
-/* Functions */
-
-void USART1_Init(void);
-void SPI1_Init(void);
-void LinkPinout_Init(void);
-void TIM_INT_Init(void);
-void UartSendBuffer(uint8_t* buffer, uint16_t length);
-void USART_DMA_TX_Config();
-void Start_DMA_USART_TX(uint8_t len);
-void SPI_DMA_RX_Config();
-void Start_DMA_SPI_RX(void);
 
 
 #endif /* USER_MAIN_H_ */
