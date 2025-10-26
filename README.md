@@ -80,7 +80,34 @@
 
 - Open the project in **MounRiver Studio IDE**, compile, and **upload** to the **CH32V003F4P6** MCU. 
 
-> The board also includes a **custom bootloader** for **USB firmware updates** when supported by the desktop toolchain. 
+> The board also includes a **custom bootloader** for **USB firmware updates** which is supported by the desktop software. 
+
+### Bootloader
+Firmware for device also includes bootloader option. Currently this feature is still in development but it can be already flashed. To do that:
+- First flash main firmware (folder: **Firmware**),
+- after that flash bootloader (folder: **Bootloader**)
+
+If bootloader is not used you **MUST** modify the code in folder **Firmware**. In file `Link.ld` change code on the top of the file to:
+
+```c
+/* Full flash 16KB */
+__app_size = 16K;
+
+MEMORY
+{
+  /* Application region - 16KB */  
+	FLASH (rx) : ORIGIN = 0x00000000, LENGTH = __app_size 
+
+  /* RAM - untouched 2KB */  
+	RAM (xrw)  : ORIGIN = 0x20000000, LENGTH = 2K
+}
+
+SECTIONS
+{
+  .init :
+  {
+    ...
+```
 
 ---
 
