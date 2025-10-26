@@ -615,11 +615,11 @@
 			"telnetport": 4444,
 			"tclport": 6666,
 			"configOptions": [
-				"-f \"${WCH:OpenOCD:default}/bin/wch-riscv.cfg\""
+				"-f \"${WCH:OpenOCD:default}/bin/wch-riscv.cfg\" -c noload"
 			],
 			"host": "localhost",
 			"port": 3333,
-			"skipDownloadBeforeDebug": false,
+			"skipDownloadBeforeDebug": true,
 			"enablePageEraser": false,
 			"enableNoZeroWaitingAreaFlash": false
 		},
@@ -651,7 +651,7 @@
 				"useProjBinaryForImage": true,
 				"useFileForImage": false,
 				"executableFile": "",
-				"executableFileOffset": ""
+				"executableFileOffset": "08001000"
 			},
 			"runCommands": {
 				"runReset": true,
