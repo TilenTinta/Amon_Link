@@ -591,12 +591,12 @@
 		]
 	},
 	"flashConfig": {
-		"mcutype": "CH32V003",
+		"mcutype": "CH32V00x",
 		"address": "0x08000000",
 		"target_path": "obj/Firmware.hex",
 		"clkSpeed": "High",
-		"debug_interface_mode": "",
-		"erase": true,
+		"debug_interface_mode": "1-wire serial",
+		"erase": false,
 		"program": true,
 		"verify": true,
 		"reset": true,

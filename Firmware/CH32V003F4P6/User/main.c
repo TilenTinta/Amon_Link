@@ -11,6 +11,7 @@
 #include "main.h"
 
 
+/*###########################################################################################################################################################*/
 /* Interrupts defines */
 void USART1_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
 void EXTI7_0_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
@@ -21,16 +22,16 @@ void TIM2_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
 /*###########################################################################################################################################################*/
 /* Functions */
 
-void USART1_Init(void);
-void SPI1_Init(void);
-void LinkPinout_Init(void);
-void TIM_INT_Init(void);
-void UartSendBuffer(uint8_t* buffer, uint16_t length);
-void UART_buffer_clear(void);
-void USART_DMA_TX_Config();
-void Start_DMA_USART_TX(uint8_t len);
-void SPI_DMA_RX_Config();
-void Start_DMA_SPI_RX(void);
+static void USART1_Init(void);
+static void SPI1_Init(void);
+static void LinkPinout_Init(void);
+static void TIM_INT_Init(void);
+static void UartSendBuffer(uint8_t* buffer, uint16_t length);
+static void UART_buffer_clear(void);
+static void USART_DMA_TX_Config();
+static void Start_DMA_USART_TX(uint8_t len);
+static void SPI_DMA_RX_Config();
+static void Start_DMA_SPI_RX(void);
 
 /*###########################################################################################################################################################*/
 
@@ -47,6 +48,7 @@ SPI_HandleTypeDef hspi1;                                    // SPI handle
 
 int main(void)
 {
+
     // Device init //
     NVIC_PriorityGroupConfig(NVIC_PriorityGroup_1);         // Init NVIC
     SystemCoreClockUpdate();                                // Init all the clocks
@@ -78,6 +80,8 @@ int main(void)
         device.conn_status = CONN_STATUS_NOK;               // Connection status
         device.conn_type = STATE_DATA_TRANSMIT;             // Communication type - clasic
         device.init_done = 1;                               // Block init 
+
+        __enable_irq();
     }
 
 
@@ -243,8 +247,7 @@ int main(void)
 
 
 /*###########################################################################################################################################################*/
-
-/* Initialization */
+/* Functions Init and code */
 
 /*********************************************************************
  * @fcn     GPIO_Init
@@ -253,7 +256,7 @@ int main(void)
  *
  * @return  none
  */
-void LinkPinout_Init(void)
+static void LinkPinout_Init(void)
 {
     GPIO_InitTypeDef  GPIO_InitStructure = {0};
     EXTI_InitTypeDef EXTI_InitStructure = {0};
@@ -365,7 +368,7 @@ void LinkPinout_Init(void)
  *
  * @return  none
  */
-void TIM_INT_Init(void)
+static void TIM_INT_Init(void)
 {
     // TIM1 - Advanced-control Timer (ADTM)
     // TIM2 - General-purpose Timer (GPTM)
@@ -410,7 +413,7 @@ void TIM_INT_Init(void)
  *
  * @return  none
  */
-void USART1_Init(void)
+static void USART1_Init(void)
 {
     GPIO_InitTypeDef  GPIO_InitStructure = {0};
     USART_InitTypeDef USART_InitStructure = {0};
@@ -464,7 +467,7 @@ void USART1_Init(void)
  *
  * @return  none
  */
-void USART_DMA_TX_Config(void) 
+static void USART_DMA_TX_Config(void) 
 {
     DMA_InitTypeDef DMA_InitStructure = {0};                                    // DMA Init struct
 
@@ -497,7 +500,7 @@ void USART_DMA_TX_Config(void)
  *
  * @return  none
  */
-void Start_DMA_USART_TX(uint8_t len) 
+static void Start_DMA_USART_TX(uint8_t len) 
 {
     DMA_Cmd(DMA1_Channel4, DISABLE);                                            // Disable DMA
     DMA_ClearFlag(DMA1_FLAG_TC4);                                               // Clear DMA flag if exist
@@ -516,7 +519,7 @@ void Start_DMA_USART_TX(uint8_t len)
  *
  * @return  none
  */
-void SPI1_Init(void)
+static void SPI1_Init(void)
 {
     GPIO_InitTypeDef  GPIO_InitStructure;
     //SPI_InitTypeDef   SPI_InitStructure;
@@ -562,7 +565,7 @@ void SPI1_Init(void)
  *
  * @return  none
  */
-void SPI_DMA_RX_Config(void) 
+static void SPI_DMA_RX_Config(void) 
 {
     DMA_InitTypeDef DMA_InitStructure = {0};                                    // DMA Init struct
 
@@ -595,7 +598,7 @@ void SPI_DMA_RX_Config(void)
  *
  * @return  none
  */
-void Start_DMA_SPI_RX(void) 
+static void Start_DMA_SPI_RX(void) 
 {
     DMA_Cmd(DMA1_Channel2, DISABLE);                                            // Disable DMA
     DMA_ClearFlag(DMA1_FLAG_TC2);                                               // Clear DMA flag if exist
@@ -613,7 +616,7 @@ void Start_DMA_SPI_RX(void)
  *
  * @return  none
  */
-void UartSendBuffer(uint8_t* buffer, uint16_t length)
+static void UartSendBuffer(uint8_t* buffer, uint16_t length)
 {
     DMA_Cmd(DMA1_Channel4, DISABLE);                                            // Disable DMA
 
@@ -683,7 +686,7 @@ void USART1_IRQHandler(void)
  *
  * @return  none
  */
-void UART_buffer_clear(void)
+static void UART_buffer_clear(void)
 {
     // Clear buffer
     for (int i = 0; i < sizeof(buffers.buffer_UART); i++)

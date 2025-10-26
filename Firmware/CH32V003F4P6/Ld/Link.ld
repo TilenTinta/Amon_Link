@@ -4,14 +4,34 @@ __stack_size = 256;
 
 PROVIDE( _stack_size = __stack_size );
 
+/* Bootloader in first 4KB */
+__bootloader_size = 4K;
+__app_offset = 4K;
+__app_size = 12K;
+
 MEMORY
 {
-	FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 16K
+  /* Bootloader region - first 4KB */
+  BOOTLOADER (rx) : ORIGIN = 0x00000000, LENGTH = __bootloader_size
+
+  /* Application region - next 12KB */  
+	FLASH (rx) : ORIGIN = 0x00000000 + __app_offset, LENGTH = __app_size 
+
+  /* RAM - untouched 2KB */  
 	RAM (xrw)  : ORIGIN = 0x20000000, LENGTH = 2K
 }
 
 SECTIONS
 {
+    /* BOOTLOADER SECTION - at beginning of flash */
+    .bootloader :
+    {
+        . = ALIGN(4);
+        *(.bootloader)          
+        /* *(.bootloader*)*/      
+        . = ALIGN(4);
+    } >BOOTLOADER AT>BOOTLOADER
+
     .init :
     { 
       _sinit = .;
