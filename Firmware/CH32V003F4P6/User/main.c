@@ -206,14 +206,16 @@ int main(void)
 
         // State: Pairing routine failed, reconnection must be triggered
         case STATE_CONN_FAIL:
+            {
+                // Report failed connection
+                char statusLabel[] = "Connection FAILED!\r\n";
+                UartSendBuffer((uint8_t*)statusLabel, strlen(statusLabel));
+                GPIO_WriteBit(GPIOC, LED_RED, Bit_SET);                     // Indicate error
+                device.state = STATE_IDLE;                                  // Go in idle mode and wait on user response
 
-            // Report failed connection
-            char statusLabel[] = "Connection FAILED!\r\n";
-            UartSendBuffer((uint8_t*)statusLabel, strlen(statusLabel));
-            GPIO_WriteBit(GPIOC, LED_RED, Bit_SET);                     // Indicate error
-            device.state = STATE_IDLE;                                  // Go in idle mode and wait on user response
-
-            break;
+                break;
+            }
+            
 
 
 

@@ -33,7 +33,7 @@
   <stringAttribute key="com.mounriver.debug.gdbjtag.openocd.otherInitCommands" value=""/>
   <stringAttribute key="org.eclipse.cdt.debug.gdbjtag.core.symbolsOffset" value=""/>
   <stringAttribute key="org.eclipse.cdt.debug.gdbjtag.core.symbolsFileName" value=""/>
-  <stringAttribute key="org.eclipse.cdt.debug.gdbjtag.core.imageOffset" value="08001000"/>
+  <stringAttribute key="org.eclipse.cdt.debug.gdbjtag.core.imageOffset" value=""/>
   <stringAttribute key="org.eclipse.cdt.debug.gdbjtag.core.imageFileName" value=""/>
   <stringAttribute key="com.mounriver.debug.gdbjtag.openocd.secondResetType" value="halt"/>
   <stringAttribute key="com.mounriver.debug.gdbjtag.openocd.otherRunCommands" value=""/>

@@ -600,7 +600,7 @@
 		"program": true,
 		"verify": true,
 		"reset": true,
-		"sdiPrintf": true,
+		"sdiPrintf": false,
 		"disablepowerout": false,
 		"clearcodeflash": false,
 		"disablecodeprotect": false,
@@ -651,7 +651,7 @@
 				"useProjBinaryForImage": true,
 				"useFileForImage": false,
 				"executableFile": "",
-				"executableFileOffset": "08001000"
+				"executableFileOffset": ""
 			},
 			"runCommands": {
 				"runReset": true,
