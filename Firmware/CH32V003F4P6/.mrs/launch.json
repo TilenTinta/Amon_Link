@@ -41,7 +41,7 @@
 				"loadedFiles": {
 					"executableFile": "c:\\DATA\\Projects\\Amon_Link\\Firmware\\CH32V003F4P6\\obj\\Firmware.elf",
 					"symbolFile": "c:\\DATA\\Projects\\Amon_Link\\Firmware\\CH32V003F4P6\\obj\\Firmware.elf",
-					"executableFileOffset": 134221824,
+					"executableFileOffset": 0,
 					"symbolFileOffset": 0
 				},
 				"runCommands": {
