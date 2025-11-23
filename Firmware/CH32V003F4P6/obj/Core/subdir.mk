@@ -1,5 +1,5 @@
 ################################################################################
-# MRS Version: 2.2.0
+# MRS Version: 2.3.0
 # Automatically-generated file. Do not edit!
 ################################################################################
 
@@ -13,10 +13,14 @@ C_DEPS += \
 OBJS += \
 ./Core/core_riscv.o 
 
+DIR_OBJS += \
+./Core/*.o \
 
-EXPANDS += \
-./Core/core_riscv.c.253r.expand 
+DIR_DEPS += \
+./Core/*.d \
 
+DIR_EXPANDS += \
+./Core/*.253r.expand \
 
 
 # Each subdirectory must supply rules for building sources it contributes

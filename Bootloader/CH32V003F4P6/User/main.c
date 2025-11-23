@@ -9,6 +9,7 @@
 
 #include "debug.h"
 #include "main.h"
+#include "core_riscv.h"
 
 /* IRQs*/
 void USART1_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
@@ -39,12 +40,18 @@ int main(void)
     SystemCoreClockUpdate(); 
     LinkPinout_Init();
     USART1_Init();
+    //TODO: add uart timeout
 
-    buffers.flag_update_OK = 0;
     buffers.flag_update_NOK = 0;
+    uint8_t flag_update = 0;
+    buffers.flag_USB_RX_end = 0;
+    buffers.flag_new_uart_tx_data = 0;
+    buffers.flag_new_uart_tx_data = 0;
 
     // Check if button is pressed, TODO: or reset flag set 
-    if (GPIO_ReadInputDataBit(GPIOD, BTN_PIN) == Bit_SET) 
+    if (GPIO_ReadInputDataBit(GPIOD, BTN_PIN) == Bit_SET) flag_update = 1;
+
+    if (flag_update == 1)
     {
         // Turn on BLUE LED
         GPIO_WriteBit(GPIOD, LED_BLUE, Bit_SET);
@@ -53,10 +60,11 @@ int main(void)
         {
             if (buffers.flag_USB_RX_end == 1) 
             {
-                UART_decode(buffers.buffer_UART);               
+                UART_decode(buffers.buffer_UART); 
+                buffers.flag_USB_RX_end = 0;   
+                UART_buffer_clear();           
             }
 
-            if (buffers.flag_update_OK == 1) jump_to_app();     // Exit bootloader
             if (buffers.flag_update_NOK == 1) GPIO_WriteBit(GPIOC, LED_RED, Bit_SET);   // Indicate an error
 
 
@@ -207,18 +215,17 @@ void USART1_IRQHandler(void)
         cntBuffer_UART++;
 
         // Detect start of frame and set flags
-        if (buffers.flag_new_uart_rx_data == 1 && len_new_rx_data == 0)         // Flag for new packet, but no lenght of packet
+        if (data == SIG_SOF && len_new_rx_data == 0 )                           // No flag for new packet and SOA packet     
+        {
+            buffers.flag_new_uart_rx_data = 1;                                  // Indicate new data received
+            buffers.flag_USB_RX_end = 0;                                        // Clear end of packet flag
+        }
+        else if (buffers.flag_new_uart_rx_data == 1 && len_new_rx_data == 0)    // Flag for new packet, but no lenght of packet
         {
             len_new_rx_data = data;                                             // Save packet lenght
             buffers.flag_new_uart_rx_data = 0;                                  // Clear flag for new data
         }
-        else if (data == SIG_SOF && len_new_rx_data == 0 && len_new_rx_data == 0)  // No flag for new packet and SOA packet
-        {
-            buffers.flag_new_uart_rx_data = 1;                                  // Indicate new data received
-            buffers.flag_USB_RX_end = 0;                                        // Clear end of packet flag
-            len_new_rx_data = 0;                                                // Clear packet counter
-        }
-        else if (cntBuffer_UART >= (len_new_rx_data + 2))                       // Detect end of complete packet
+        else if (cntBuffer_UART >= (len_new_rx_data + 2) && len_new_rx_data != 0) // Detect end of complete packet
         {
             buffers.flag_USB_RX_end = 1;                                        // Indicate end of packet
             cntBuffer_UART = 0;                                                 // Clear UART counter
@@ -287,7 +294,7 @@ static void UART_decode(uint8_t* raw_uart_data)
     UART_packet_parse(raw_uart_data);
 
     // CRC check
-    uint16_t cal_CRC = crc16_cal(&raw_uart_data[1], packet.plen - 2);
+    uint16_t cal_CRC = crc16_cal(&raw_uart_data[1], packet.plen + 1);   // CRC calculate over: PLEN + ADDR + CMD + payload
 
     if (cal_CRC != packet.crc16)
     {
@@ -297,10 +304,11 @@ static void UART_decode(uint8_t* raw_uart_data)
         buffers.buffer_UART[2] = ID_PC;
         buffers.buffer_UART[3] = CMD_ERR;
         buffers.buffer_UART[4] = CODE_BAD_CRC;
-        buffers.buffer_UART[5] = crc16_cal(&buffers.buffer_UART[1], 4);
+        buffers.buffer_UART[5] = crc16_cal(&buffers.buffer_UART[1], 5);
 
         // Send
         UartSendBuffer(buffers.buffer_UART,sizeof(buffers.buffer_UART));
+        buffers.flag_update_NOK = 1;
         return;
     } 
 
@@ -330,7 +338,9 @@ static void UART_decode(uint8_t* raw_uart_data)
                     buffers.buffer_UART[3] = CMD_ACK;
                     buffers.buffer_UART[4] = CODE_SW_VER;
                     buffers.buffer_UART[5] = SW_VER;
-                    buffers.buffer_UART[6] = crc16_cal(&buffers.buffer_UART[1], 5);
+                    uint16_t crc_temp = crc16_cal(&buffers.buffer_UART[1], 5);
+                    buffers.buffer_UART[6] = (uint8_t)(crc_temp >> 8);
+                    buffers.buffer_UART[7] = (uint8_t)(crc_temp);
 
                     // Send
                     UartSendBuffer(buffers.buffer_UART,sizeof(buffers.buffer_UART));
@@ -347,7 +357,7 @@ static void UART_decode(uint8_t* raw_uart_data)
                     buffers.buffer_UART[1] = 5;
                     buffers.buffer_UART[2] = ID_PC;
                     buffers.buffer_UART[3] = CMD_ACK;
-                    buffers.buffer_UART[4] = crc16_cal(&buffers.buffer_UART[1], 3);
+                    buffers.buffer_UART[4] = crc16_cal(&buffers.buffer_UART[1], 4);
 
                     // Send
                     UartSendBuffer(buffers.buffer_UART,sizeof(buffers.buffer_UART));
@@ -370,7 +380,7 @@ static void UART_decode(uint8_t* raw_uart_data)
                         buffers.buffer_UART[2] = ID_PC;
                         buffers.buffer_UART[3] = CMD_ACK;
                         buffers.buffer_UART[4] = CODE_DATA_WRITEN;
-                        buffers.buffer_UART[5] = crc16_cal(&buffers.buffer_UART[1], 4);
+                        buffers.buffer_UART[5] = crc16_cal(&buffers.buffer_UART[1], 5);
 
                         // Send
                         UartSendBuffer(buffers.buffer_UART,sizeof(buffers.buffer_UART));
@@ -386,7 +396,7 @@ static void UART_decode(uint8_t* raw_uart_data)
                     buffers.buffer_UART[2] = ID_PC;
                     buffers.buffer_UART[3] = CMD_ACK;
                     buffers.buffer_UART[4] = CODE_EXIT_BOOT;
-                    buffers.buffer_UART[5] = crc16_cal(&buffers.buffer_UART[1], 4);
+                    buffers.buffer_UART[5] = crc16_cal(&buffers.buffer_UART[1], 5);
 
                     // Send
                     UartSendBuffer(buffers.buffer_UART,sizeof(buffers.buffer_UART));
@@ -417,15 +427,23 @@ static void UART_decode(uint8_t* raw_uart_data)
 
 static void UART_packet_parse(uint8_t* raw_data)
 {
+    // Example: 
+    //      Packet structure: SOF=0xaa, PLEN=0x4, ADDR=0x10, CMD=0x1
+    //      Full packet bytes: ['0xaa', '0x4', '0x10', '0x1', '0xfc', '0x1']
+
     packet.sof = *raw_data;
-    packet.plen = *(raw_data + 1);
+    packet.plen = *(raw_data + 1) - 2;      // Without CRC16
     packet.addr = *(raw_data + 2);
     packet.cmd = *(raw_data + 3);
-    for (int i = 0; i < packet.plen; i++)
+    if (packet.plen - 2 > 0)                // CRC16 is not counted and ADDR and CMD are not payload
     {
-        packet.payload[i] = *(raw_data + HEADER_SHIFT + i);
+        for (int i = 0; i < packet.plen; i++)
+        {
+            packet.payload[i] = *(raw_data + HEADER_SHIFT + i);
+        }  
     }
-    packet.crc16 = *(raw_data + (packet.plen + 1));
+    
+    packet.crc16 = (uint16_t)*(raw_data + (HEADER_SHIFT + packet.plen - 2)) | ((uint16_t)*(raw_data + (HEADER_SHIFT + packet.plen - 1)) << 8);
 }
 
 
@@ -484,13 +502,14 @@ static void flash_write_chunk(uint32_t address, uint8_t *data, uint16_t length)
  *
  * @brief   Calculates 2 byte crc over data
  *          Modbus RTU-style CRC-16 algorithm
+ *          x^16 + x^15 + x^2 + 1
  *          https://ctlsys.com/support/how_to_compute_the_modbus_rtu_message_crc/
  *
  * @return  crc value
  */
 static uint16_t crc16_cal(const uint8_t *data, uint16_t length)
 {
-    uint16_t crc = 0xFFFF;                  // don¡¯t start with zero, this would make some leading zeros in data invisible
+    uint16_t crc = 0xFFFF;                  // don't start with zero, this would make some leading zeros in data invisible
 
     for (uint16_t i = 0; i < length; i++)
     {
@@ -509,6 +528,7 @@ static uint16_t crc16_cal(const uint8_t *data, uint16_t length)
             }                            
         }
     }
+    
     // Note, this number has low and high bytes swapped, so use it accordingly
     return crc;
 }
@@ -524,34 +544,34 @@ static uint16_t crc16_cal(const uint8_t *data, uint16_t length)
  */
 static void jump_to_app(void)
 {
-    // Get app vector table
-    uint32_t *app_vector_table = (uint32_t *)APP_START_ADDRESS;
-    uint32_t app_sp = app_vector_table[0];                      // app init stack pointer
-    uint32_t app_reset_handler = app_vector_table[1];           // app reset handler address
+    const uint32_t app_entry = APP_START_ADDRESS; // entry (_start) of the app
 
-    // Disable all interrupts
+    // Disable interrupts while switching context
     __disable_irq();
 
-    // Clear any pending interrupts
+    // Clear pending IRQs you used (at least USART1)
     NVIC_ClearPendingIRQ(USART1_IRQn);
-    
-    // Deinit peripherals
+
+    // Deinit peripherals used by the bootloader
     USART_DeInit(USART1);
     GPIO_DeInit(GPIOD);
     GPIO_DeInit(GPIOC);
-    
-    // Disable peripheral clocks
-    RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1 | RCC_APB2Periph_GPIOD | RCC_APB2Periph_GPIOC | RCC_APB2Periph_AFIO, DISABLE);
 
-    // Set app stack pointer
-    __asm volatile ("mv sp, %0" : : "r" (app_sp));
+    // Disable peripheral clocks used by the bootloader
+    RCC_APB2PeriphClockCmd(
+        RCC_APB2Periph_USART1 |
+        RCC_APB2Periph_GPIOD  |
+        RCC_APB2Periph_GPIOC  |
+        RCC_APB2Periph_AFIO,
+        DISABLE);
 
-    // Jump to app reset handler
-    app_entry_t app_start = (app_entry_t)app_reset_handler;
-    app_start();
+    // Set the next PC to the app entry (_start) and return to it in M-mode
+    __set_MEPC(app_entry);
+    __asm volatile("mret");
 
-    // If something goes wrong stop here
+    // Should never reach here
     while (1) { }
+
 }
 
 

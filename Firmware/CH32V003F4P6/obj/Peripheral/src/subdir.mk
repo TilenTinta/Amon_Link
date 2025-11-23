@@ -1,5 +1,5 @@
 ################################################################################
-# MRS Version: 2.2.0
+# MRS Version: 2.3.0
 # Automatically-generated file. Do not edit!
 ################################################################################
 
@@ -58,25 +58,14 @@ OBJS += \
 ./Peripheral/src/ch32v00x_usart.o \
 ./Peripheral/src/ch32v00x_wwdg.o 
 
+DIR_OBJS += \
+./Peripheral/src/*.o \
 
-EXPANDS += \
-./Peripheral/src/ch32v00x_adc.c.253r.expand \
-./Peripheral/src/ch32v00x_dbgmcu.c.253r.expand \
-./Peripheral/src/ch32v00x_dma.c.253r.expand \
-./Peripheral/src/ch32v00x_exti.c.253r.expand \
-./Peripheral/src/ch32v00x_flash.c.253r.expand \
-./Peripheral/src/ch32v00x_gpio.c.253r.expand \
-./Peripheral/src/ch32v00x_i2c.c.253r.expand \
-./Peripheral/src/ch32v00x_iwdg.c.253r.expand \
-./Peripheral/src/ch32v00x_misc.c.253r.expand \
-./Peripheral/src/ch32v00x_opa.c.253r.expand \
-./Peripheral/src/ch32v00x_pwr.c.253r.expand \
-./Peripheral/src/ch32v00x_rcc.c.253r.expand \
-./Peripheral/src/ch32v00x_spi.c.253r.expand \
-./Peripheral/src/ch32v00x_tim.c.253r.expand \
-./Peripheral/src/ch32v00x_usart.c.253r.expand \
-./Peripheral/src/ch32v00x_wwdg.c.253r.expand 
+DIR_DEPS += \
+./Peripheral/src/*.d \
 
+DIR_EXPANDS += \
+./Peripheral/src/*.253r.expand \
 
 
 # Each subdirectory must supply rules for building sources it contributes

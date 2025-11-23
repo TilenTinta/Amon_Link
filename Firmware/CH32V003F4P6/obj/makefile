@@ -1,5 +1,5 @@
 ################################################################################
-# MRS Version: 2.2.0
+# MRS Version: 2.3.0
 # Automatically-generated file. Do not edit!
 ################################################################################
 -include ../makefile.init
@@ -56,8 +56,8 @@ all:
 main-build: Firmware.elf secondary-outputs
 
 # Tool invocations
-Firmware.elf: $(OBJS) $(USER_OBJS)
-	@	riscv-wch-elf-gcc -march=rv32ecxw -mabi=ilp32e -msmall-data-limit=0 -msave-restore -fmax-errors=20 -Os -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -fno-common -Wunused -Wuninitialized -g -T "c:/DATA/Projects/Amon_Link/Firmware/CH32V003F4P6/Ld/Link.ld" -nostartfiles -Xlinker --gc-sections -Xlinker --print-memory-usage -Wl,-Map,"Firmware.map" --specs=nano.specs --specs=nosys.specs -o "Firmware.elf" $(OBJS)  $(LIBS) -lprintf
+Firmware.elf: $(OBJS) $(USER_OBJS_ESCAPE)
+	@	riscv-wch-elf-gcc -march=rv32ecxw -mabi=ilp32e -msmall-data-limit=0 -msave-restore -fmax-errors=20 -Os -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -fno-common -Wunused -Wuninitialized -g -T "c:/DATA/Projects/Amon_Link/Firmware/CH32V003F4P6/Ld/Link.ld" -nostartfiles -Xlinker --gc-sections -Wl,-Map,"Firmware.map" --specs=nano.specs --specs=nosys.specs -o "Firmware.elf" $(OBJS) $(LIBS) -lprintf
 Firmware.hex: Firmware.elf
 	@	riscv-wch-elf-objcopy -O ihex "Firmware.elf" "Firmware.hex"
 Firmware.lst: Firmware.elf
@@ -67,8 +67,9 @@ Firmware.siz: Firmware.elf
 
 # Other Targets
 clean:
-	-$(RM) $(OBJS) $(EXPANDS) $(CALLGRAPH_DOT) $(SECONDARY_FLASH)$(SECONDARY_LIST)$(SECONDARY_SIZE)$(S_DEPS)$(S_UPPER_DEPS)$(ASM_DEPS)$(ASM_UPPER_DEPS)$(C_DEPS) Firmware.elf
-
+	-$(RM) $(DIR_OBJS) $(SECONDARY_FLASH)$(SECONDARY_LIST)$(SECONDARY_SIZE) Firmware.elf
+	-$(RM) $(DIR_EXPANDS) $(CALLGRAPH_DOT)
+	-$(RM) $(DIR_DEPS)
 secondary-outputs: $(SECONDARY_FLASH) $(SECONDARY_LIST) $(SECONDARY_SIZE)
 
 .PHONY: all clean dependents

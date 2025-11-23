@@ -1,5 +1,5 @@
 ################################################################################
-# MRS Version: 2.2.0
+# MRS Version: 2.3.0
 # Automatically-generated file. Do not edit!
 ################################################################################
 
@@ -13,10 +13,14 @@ S_UPPER_DEPS += \
 OBJS += \
 ./Startup/startup_ch32v00x.o 
 
+DIR_OBJS += \
+./Startup/*.o \
 
-EXPANDS += \
-./Startup/startup_ch32v00x.S.253r.expand 
+DIR_DEPS += \
+./Startup/*.d \
 
+DIR_EXPANDS += \
+./Startup/*.253r.expand \
 
 
 # Each subdirectory must supply rules for building sources it contributes

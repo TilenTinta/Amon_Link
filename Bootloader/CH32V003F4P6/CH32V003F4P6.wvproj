@@ -9,6 +9,7 @@
 			"rtos": "NoneOS",
 			"mcu": "CH32V003F4P6",
 			"description": "Website: https://www.wch.cn/products/CH32V003.html?\\nThe CH32V003 series is an industral-grade general-purpose microcontroller designed based on the highland barley RISCV-V2A core, and supports 48MHz system frequency in terms of product functions. This series has the characteristics of wide voltage, single-wire debugging, low power consumption, ultra-small package and so on. Provide common peripheral functions, built-in 1 set of DMA controller, 1 set of 10-bit analog-to-digital conversion ADC, 1 set of op amp comparator, multiple sets of timers, standard communication interfaces such as USART, I2C, SPI, etc. The rated working voltage of the product is 3.3V or 5V, and the working temperature range is -40'C~85'C industrial grade.",
+			"artifactType": "executable",
 			"link": "WCH-Link",
 			"peripheral_version": "2.1",
 			"calibrateSupport": false,
@@ -43,7 +44,7 @@
 				"post_script_description": "",
 				"excludeResources": [],
 				"optimization": {
-					"level": "size",
+					"level": "debug",
 					"message_length": true,
 					"char_is_signed": true,
 					"function_sections": true,
@@ -286,6 +287,7 @@
 					"show_totals": false,
 					"other_flags": ""
 				},
+				"configVariables": [],
 				"riscvTargetProcessor": {
 					"architecture": "rv32e",
 					"multiply_extension": false,
@@ -305,8 +307,7 @@
 					"other_target_flags": ""
 				},
 				"component_toolchain": "${WCH:Toolchain:GCC8}",
-				"name": "obj",
-				"configVariables": []
+				"name": "obj"
 			}
 		]
 	},

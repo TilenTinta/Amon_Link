@@ -1,5 +1,5 @@
 ################################################################################
-# MRS Version: 2.2.0
+# MRS Version: 2.3.0
 # Automatically-generated file. Do not edit!
 ################################################################################
 
@@ -13,10 +13,14 @@ C_DEPS += \
 OBJS += \
 ./Debug/debug.o 
 
+DIR_OBJS += \
+./Debug/*.o \
 
-EXPANDS += \
-./Debug/debug.c.253r.expand 
+DIR_DEPS += \
+./Debug/*.d \
 
+DIR_EXPANDS += \
+./Debug/*.253r.expand \
 
 
 # Each subdirectory must supply rules for building sources it contributes

@@ -1,5 +1,5 @@
 ################################################################################
-# MRS Version: 2.2.0
+# MRS Version: 2.3.0
 # Automatically-generated file. Do not edit!
 ################################################################################
 
@@ -58,28 +58,17 @@ OBJS += \
 ./Peripheral/src/ch32v00x_usart.o \
 ./Peripheral/src/ch32v00x_wwdg.o 
 
+DIR_OBJS += \
+./Peripheral/src/*.o \
 
-EXPANDS += \
-./Peripheral/src/ch32v00x_adc.c.234r.expand \
-./Peripheral/src/ch32v00x_dbgmcu.c.234r.expand \
-./Peripheral/src/ch32v00x_dma.c.234r.expand \
-./Peripheral/src/ch32v00x_exti.c.234r.expand \
-./Peripheral/src/ch32v00x_flash.c.234r.expand \
-./Peripheral/src/ch32v00x_gpio.c.234r.expand \
-./Peripheral/src/ch32v00x_i2c.c.234r.expand \
-./Peripheral/src/ch32v00x_iwdg.c.234r.expand \
-./Peripheral/src/ch32v00x_misc.c.234r.expand \
-./Peripheral/src/ch32v00x_opa.c.234r.expand \
-./Peripheral/src/ch32v00x_pwr.c.234r.expand \
-./Peripheral/src/ch32v00x_rcc.c.234r.expand \
-./Peripheral/src/ch32v00x_spi.c.234r.expand \
-./Peripheral/src/ch32v00x_tim.c.234r.expand \
-./Peripheral/src/ch32v00x_usart.c.234r.expand \
-./Peripheral/src/ch32v00x_wwdg.c.234r.expand 
+DIR_DEPS += \
+./Peripheral/src/*.d \
 
+DIR_EXPANDS += \
+./Peripheral/src/*.234r.expand \
 
 
 # Each subdirectory must supply rules for building sources it contributes
 Peripheral/src/%.o: ../Peripheral/src/%.c
-	@	riscv-none-embed-gcc -march=rv32ecxw -mabi=ilp32e -msmall-data-limit=0 -msave-restore -fmax-errors=20 -Os -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -fno-common -Wunused -Wuninitialized -g -I"c:/DATA/Projects/Amon_Link/Bootloader/CH32V003F4P6/Debug" -I"c:/DATA/Projects/Amon_Link/Bootloader/CH32V003F4P6/Core" -I"c:/DATA/Projects/Amon_Link/Bootloader/CH32V003F4P6/User" -I"c:/DATA/Projects/Amon_Link/Bootloader/CH32V003F4P6/Peripheral/inc" -std=gnu99 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)" -c -o "$@" "$<"
+	@	riscv-none-embed-gcc -march=rv32ecxw -mabi=ilp32e -msmall-data-limit=0 -msave-restore -fmax-errors=20 -Og -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -fno-common -Wunused -Wuninitialized -g -I"c:/DATA/Projects/Amon_Link/Bootloader/CH32V003F4P6/Debug" -I"c:/DATA/Projects/Amon_Link/Bootloader/CH32V003F4P6/Core" -I"c:/DATA/Projects/Amon_Link/Bootloader/CH32V003F4P6/User" -I"c:/DATA/Projects/Amon_Link/Bootloader/CH32V003F4P6/Peripheral/inc" -std=gnu99 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)" -c -o "$@" "$<"
 

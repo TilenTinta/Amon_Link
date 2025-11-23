@@ -7,6 +7,8 @@
  *                      over UART (USB)
 *****************************************************************/
 
+// TODO: Build - Optimized for debug!!!!!
+
 #ifndef BOOTLOADER_H
 #define BOOTLOADER_H
 
@@ -19,9 +21,9 @@
 
 // Device constants
 #define BOOT_DATE        "October 2025"             // Date of software
-#define SW_VER              01                      // Version of software
-#define APP_START_ADDRESS  ((uint32_t)0x08001000u)  // Address of start of main program
-#define APP_END_ADDRESS     0x08003FFF              // End address of flash
+#define SW_VER                  0x01                // Version of software
+#define APP_START_ADDRESS  ((uint32_t)0x00001000u)  // Address of start of main program
+#define APP_END_ADDRESS     0x00003FFF              // End address of flash
 #define PAGE_SIZE           64                      // Page size in bytes
 
 // Pinout
@@ -37,7 +39,7 @@
 #define ID_LINK                 0x10    // Address: Link board
 
 // Signaling (1 byte)
-#define HEADER_SHIFT            0x08    // Number of bytes before payload
+#define HEADER_SHIFT            0x04    // Number of bytes before payload
 #define SIG_SOF                 0xAA    // Start-Of-Frame
 
 // Commands (1 byte)
@@ -66,7 +68,6 @@ typedef struct {
     uint8_t     flag_new_uart_tx_data;  // Flag indicating a new data is ready to send
     uint8_t     flag_USB_RX_end;        // Flag for new complete USB command (PC -> link) - start decode
 
-    uint8_t     flag_update_OK;         // Flag for indicating end of sucessful update
     uint8_t     flag_update_NOK;        // Flag for indicating end of unsucessful update
 
 } buffers_t;
@@ -75,7 +76,7 @@ typedef struct {
 typedef struct {
 
     uint8_t sof;                        // Start of frame
-    uint16_t plen;                      // Packet lenght
+    uint8_t plen;                       // Packet lenght
     uint8_t addr;                       // Address of targeted device
     uint8_t cmd;                        // Command
     uint8_t payload[128];               // Payload data

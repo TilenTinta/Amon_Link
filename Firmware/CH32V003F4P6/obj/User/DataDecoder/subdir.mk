@@ -1,5 +1,5 @@
 ################################################################################
-# MRS Version: 2.2.0
+# MRS Version: 2.3.0
 # Automatically-generated file. Do not edit!
 ################################################################################
 
@@ -13,10 +13,14 @@ C_DEPS += \
 OBJS += \
 ./User/DataDecoder/dataDecoder.o 
 
+DIR_OBJS += \
+./User/DataDecoder/*.o \
 
-EXPANDS += \
-./User/DataDecoder/dataDecoder.c.253r.expand 
+DIR_DEPS += \
+./User/DataDecoder/*.d \
 
+DIR_EXPANDS += \
+./User/DataDecoder/*.253r.expand \
 
 
 # Each subdirectory must supply rules for building sources it contributes

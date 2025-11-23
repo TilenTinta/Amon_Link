@@ -1,5 +1,5 @@
 ################################################################################
-# MRS Version: 2.2.0
+# MRS Version: 2.3.0
 # Automatically-generated file. Do not edit!
 ################################################################################
 
@@ -19,12 +19,14 @@ OBJS += \
 ./User/main.o \
 ./User/system_ch32v00x.o 
 
+DIR_OBJS += \
+./User/*.o \
 
-EXPANDS += \
-./User/ch32v00x_it.c.253r.expand \
-./User/main.c.253r.expand \
-./User/system_ch32v00x.c.253r.expand 
+DIR_DEPS += \
+./User/*.d \
 
+DIR_EXPANDS += \
+./User/*.253r.expand \
 
 
 # Each subdirectory must supply rules for building sources it contributes
