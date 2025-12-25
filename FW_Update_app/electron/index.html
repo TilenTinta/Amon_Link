@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src http://127.0.0.1:8000;"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Amon Firmware Update</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="header">
+        <div class="title-block">
+          <div class="tag">Amon System</div>
+          <h1>Amon Firmware Update Console</h1>
+          <p>Securely connect, verify, and deploy firmware to communication electronics.</p>
+        </div>
+        <div class="status-panel">
+          <div class="status-row">
+            <span class="label">Link Status</span>
+            <span id="statusBadge" class="badge">Disconnected</span>
+          </div>
+          <div class="status-row">
+            <span class="label">Last Signal</span>
+            <span id="lastMessage" class="muted">No messages yet</span>
+          </div>
+        </div>
+      </header>
+
+      <section class="grid">
+        <div class="card">
+          <h2>Connection Control</h2>
+          <div class="row">
+            <label for="portSelect">Serial Port</label>
+            <select id="portSelect"></select>
+            <button id="refreshPorts" class="ghost">Rescan</button>
+          </div>
+          <div class="row">
+            <label for="baudSelect">Baud Rate</label>
+            <select id="baudSelect">
+              <option>9600</option>
+              <option>19200</option>
+              <option>57600</option>
+              <option selected>115200</option>
+              <option>230400</option>
+              <option>460800</option>
+            </select>
+          </div>
+          <div class="row">
+            <button id="connectBtn" class="primary">Connect</button>
+            <button id="pollBtn" class="ghost">Check responses</button>
+          </div>
+          <div class="divider"></div>
+          <div class="meta">
+            <div>
+              <span class="label">Backend</span>
+              <span id="backendStatus" class="value">Starting...</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Firmware Deployment</h2>
+          <div class="row">
+            <input id="fileInput" type="file" />
+            <button id="uploadBtn">Load Package</button>
+          </div>
+          <div class="progress">
+            <div id="progressFill" class="progress-fill"></div>
+          </div>
+          <div class="row">
+            <span id="fileLabel" class="muted">No file selected</span>
+            <button id="startUploadBtn" class="primary">Upload</button>
+          </div>
+          <div class="meta">
+            <div>
+              <span class="label">CRC32</span>
+              <span id="crcValue" class="value muted">-</span>
+            </div>
+          </div>
+          <div class="hint">
+            Use validated firmware images only. Upload progress is tracked in real time.
+          </div>
+        </div>
+      </section>
+
+      <section class="card log-card">
+        <div class="log-header">
+          <h2>Console</h2>
+          <button id="clearLog" class="ghost">Clear</button>
+        </div>
+        <div id="logList" class="log-list">
+          <div class="log-item">System ready. Awaiting connection.</div>
+        </div>
+      </section>
+    </div>
+
+    <script src="./renderer.js"></script>
+  </body>
+</html>
+

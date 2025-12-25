@@ -24,6 +24,7 @@ static void UART_packet_parse(uint8_t* raw_data);
 static void UART_packetDataReset(void);
 static void flash_erase_app(void);
 static void flash_write_chunk(uint32_t address, uint8_t *data, uint16_t length);
+void user_optBytes_read(uint32_t *data, uint32_t offset);
 static uint16_t crc16_cal(const uint8_t *data, uint16_t length);
 
 static void jump_to_app(void);
@@ -34,12 +35,17 @@ buffers_t buffers;
 packet_t packet;
 typedef void (*app_entry_t)(void);
 
+/* Variables */
+uint32_t device_id = 0;
+
 int main(void)
 {
     // Init //
     SystemCoreClockUpdate(); 
     LinkPinout_Init();
     USART1_Init();
+
+    device_id = DBGMCU_GetCHIPID();              // Get unic device ID
     //TODO: add uart timeout
 
     buffers.flag_update_NOK = 0;
@@ -48,8 +54,10 @@ int main(void)
     buffers.flag_new_uart_tx_data = 0;
     buffers.flag_new_uart_tx_data = 0;
 
-    // Check if button is pressed, TODO: or reset flag set 
+    // Check if button is pressed to stay in bootloader, TODO: or reset flag set 
     if (GPIO_ReadInputDataBit(GPIOD, BTN_PIN) == Bit_SET) flag_update = 1;
+    uint32_t userData = 0;
+    user_optBytes_read(&userData, 0x00);
 
     if (flag_update == 1)
     {
@@ -58,6 +66,7 @@ int main(void)
 
         while(1)
         {
+            /* Wait for received data */
             if (buffers.flag_USB_RX_end == 1) 
             {
                 UART_decode(buffers.buffer_UART); 
@@ -72,6 +81,7 @@ int main(void)
     }
     else
     {
+        /* Jump to main application */
         GPIO_WriteBit(GPIOC, LED_RED, Bit_RESET);
         jump_to_app();
     }
@@ -323,13 +333,18 @@ static void UART_decode(uint8_t* raw_uart_data)
             return;
             break;
 
+        // Destination device: LINK main software - error
+        case ID_LINK_SW:
+            return;
+            break;
+
         // Destination device: link
-        case ID_LINK:
+        case ID_LINK_BOOT:
             
             // Do action based on commands
             switch (packet.cmd)
             {
-                case CMD_GET_INFO:
+                case CMD_READ:
 
                     // Send a response 
                     buffers.buffer_UART[0] = SIG_SOF;
@@ -348,7 +363,7 @@ static void UART_decode(uint8_t* raw_uart_data)
                     break;
 
 
-                case CMD_ERASE_APP:
+                case CMD_ERASE:
 
                     flash_erase_app();
 
@@ -467,6 +482,22 @@ static void flash_erase_app(void)
 
     FLASH_Lock();
 }
+
+
+
+/*********************************************************************
+ * @fcn     user_optBytes_read
+ *
+ * @brief   Read area of flash meant for user specific values
+ *
+ * @return  none
+ */
+void user_optBytes_read(uint32_t *data, uint32_t offset)
+{
+    // Option bytes are word-aligned
+    *data = *(volatile uint32_t *)(USER_OPTION_BYTES + offset);
+}
+
 
 
 

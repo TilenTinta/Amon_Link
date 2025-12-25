@@ -25,6 +25,9 @@
 #define SW_VER              1           // Software version (used in UART packets)
 #define SW_DATE        "February 2025"  // Date of software
 
+#define FLAG_REBOOT         0x00        // TODO: Flash address of reboot mode flag (bootloader/main sw)
+#define SW_HASH             0x00        // TODO: Hash of current sw
+
 #define RADIO_NO            2           // Number of radios (1 or 2)
 
 #define STATE_INIT          0           // State machine value: boot-up (blue light)

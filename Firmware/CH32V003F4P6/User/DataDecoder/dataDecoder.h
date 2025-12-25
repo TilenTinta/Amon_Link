@@ -20,10 +20,10 @@
  *	  - LEN    (1B): number of bytes in HEADER+PAYLOAD (0..255)
  *	  - HEADER (6B):
  *		- VER    (1B) : protocol version (start with 0x01)
- *		- FLAGS  (1B) : bitfield (see ¡ì4)
+ *		- FLAGS  (1B) : bitfield (see 4)
  *		- SRC    (1B) : logical source ID
  *		- DST    (1B) : logical destination ID
- *		- OPCODE (1B) : command (see ¡ì5)
+ *		- OPCODE (1B) : command (see 5)
  *		- PLEN   (1B) : payload length (0..N)
  *	  - PAYLOAD (PLEN bytes)
  *	  - CRC16  (2B): CRC-16/CCITT (poly 0x1021, init 0xFFFF) over LEN..PAYLOAD
@@ -43,7 +43,8 @@
 
 // Entities / IDs (1 byte)
 #define ID_PC                   0x01    // Address: PC
-#define ID_LINK                 0x10    // Address: Link board
+#define ID_LINK_BOOT            0x10    // Address: Link board - bootloader
+#define ID_LINK_SW              0x11    // Address: Link board - software
 #define ID_DRONE                0x20    // Address: Drone (can be multiple)
 #define ID_BROADCAST            0xFF    // Address: Broadcast
 

@@ -1,0 +1,13 @@
+{
+  "name": "amon-system-fw-update",
+  "version": "1.0.0",
+  "description": "Electron GUI for Amon System firmware update (Python backend).",
+  "main": "electron/main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^28.2.0"
+  }
+}
+
