@@ -2,8 +2,15 @@
 node_modules/
 Datasheet/
 AVR/
-FW_Update_app/node_modules
+**/node_modules/
 
 # binaries
 *.exe
+*.dll
+*.so
+*.dylib
+*.bin
 
+# Electron and large files
+**/electron/dist/
+**/electron.exe
