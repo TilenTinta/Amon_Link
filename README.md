@@ -83,7 +83,7 @@
 > The board also includes a **custom bootloader** for **USB firmware updates** which is supported by the desktop software. 
 
 ### Bootloader
-Firmware for device also includes bootloader option. Currently this feature is still in development but it can be already flashed. To do that:
+Firmware for device also includes bootloader option. To flash that:
 - First flash main firmware (folder: **Firmware**),
 - after that flash bootloader (folder: **Bootloader**)
 
@@ -108,6 +108,7 @@ SECTIONS
   {
     ...
 ```
+Once the bootloader is flashed, you can put your device in firmware update mode by holding the **Reconnect** button while plugging in the USB cable or by triggering it via software. When the blue LED lights up, you're in firmware update mode!
 
 The firmware can be updated using a graphical application. The application is built with a Python backend and an Electron front end. You can select and import either a hex or a binary file. Once imported, the CRC32 checksum is calculated for the file.
 
