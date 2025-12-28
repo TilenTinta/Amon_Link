@@ -11,6 +11,15 @@ ID_LINK_BOOT = 0x10
 ID_LINK_SW = 0x11
 ID_PC = 0x01
 CMD_GET_INFO = 0x01
+CMD_WRITE = 0x03
+CMD_END_OF_FW = 0x06
+CMD_ACK = 0x80
+CMD_ERR = 0x81
+CODE_BOOT_VER = 0x02
+CODE_SW_CRC = 0x02
+CODE_DATA_WRITEN = 0x10
+CODE_BAD_CRC = 0x01
+CODE_EXIT_BOOT = 0x03
 HEADER_SHIFT = 0x08
 
 
@@ -81,6 +90,15 @@ __all__ = [
     "ID_LINK_SW",
     "ID_PC",
     "CMD_GET_INFO",
+    "CMD_WRITE",
+    "CMD_END_OF_FW",
+    "CMD_ACK",
+    "CMD_ERR",
+    "CODE_BOOT_VER",
+    "CODE_SW_CRC",
+    "CODE_DATA_WRITEN",
+    "CODE_BAD_CRC",
+    "CODE_EXIT_BOOT",
     "HEADER_SHIFT",
     "crc16_cal",
     "build_packet",

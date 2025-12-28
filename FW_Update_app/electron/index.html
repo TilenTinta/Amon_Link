@@ -15,7 +15,7 @@
       <header class="header">
         <div class="title-block">
           <div class="tag">Amon System</div>
-          <h1>Amon Firmware Update Console</h1>
+          <h1>Amon Link Firmware Update Console</h1>
           <p>Securely connect, verify, and deploy firmware to communication electronics.</p>
         </div>
         <div class="status-panel">
@@ -51,13 +51,24 @@
           </div>
           <div class="row">
             <button id="connectBtn" class="primary">Connect</button>
-            <button id="pollBtn" class="ghost">Check responses</button>
           </div>
           <div class="divider"></div>
           <div class="meta">
             <div>
               <span class="label">Backend</span>
               <span id="backendStatus" class="value">Starting...</span>
+            </div>
+            <div>
+              <span class="label">Boot Ver</span>
+              <span id="bootVer" class="value muted">-</span>
+            </div>
+            <div>
+              <span class="label">Device CRC32</span>
+              <span id="deviceCrc32" class="value muted">-</span>
+            </div>
+            <div>
+              <span class="label">CRC32 Match</span>
+              <span id="crcMatch" class="value muted">-</span>
             </div>
           </div>
         </div>
@@ -101,4 +112,3 @@
     <script src="./renderer.js"></script>
   </body>
 </html>
-

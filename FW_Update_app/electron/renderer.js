@@ -11,18 +11,21 @@ const uploadBtn = document.getElementById("uploadBtn");
 const startUploadBtn = document.getElementById("startUploadBtn");
 const progressFill = document.getElementById("progressFill");
 const fileLabel = document.getElementById("fileLabel");
-const pollBtn = document.getElementById("pollBtn");
 const logList = document.getElementById("logList");
 const clearLogBtn = document.getElementById("clearLog");
 const backendStatus = document.getElementById("backendStatus");
 const crcValue = document.getElementById("crcValue");
+const bootVer = document.getElementById("bootVer");
+const deviceCrc32 = document.getElementById("deviceCrc32");
+const crcMatch = document.getElementById("crcMatch");
+
+let allowUpload = true;
 
 const actionButtons = [
   refreshPortsBtn,
   connectBtn,
   uploadBtn,
   startUploadBtn,
-  pollBtn,
 ];
 
 function addLog(message) {
@@ -55,13 +58,28 @@ function setStatus(state) {
   }
   progressFill.style.width = `${state.upload_progress || 0}%`;
   crcValue.textContent = state.upload_crc32 || "-";
+  bootVer.textContent = state.device_boot_ver || "-";
+  deviceCrc32.textContent = state.device_crc32 || "-";
+  if (state.crc_match === "match") {
+    crcMatch.textContent = "Match";
+  } else if (state.crc_match === "mismatch") {
+    crcMatch.textContent = "Mismatch";
+  } else {
+    crcMatch.textContent = "-";
+  }
   connectBtn.textContent = connected ? "Disconnect" : "Connect";
   connectBtn.classList.toggle("danger", connected);
   connectBtn.classList.toggle("primary", !connected);
 }
 
 async function fetchJson(path, options = {}) {
-  const response = await fetch(`${backendUrl}${path}`, options);
+  const controller = new AbortController();
+  const timeoutMs = options.timeoutMs ?? 8000;
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  const response = await fetch(`${backendUrl}${path}`, {
+    ...options,
+    signal: controller.signal,
+  }).finally(() => clearTimeout(timeoutId));
   if (!response.ok) {
     const text = await response.text();
     throw new Error(text || response.statusText);
@@ -137,6 +155,7 @@ async function connect() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ port, baud_rate }),
+      timeoutMs: 8000,
     });
     if (state.error) {
       addLog(`Connect failed: ${state.error}`);
@@ -184,13 +203,29 @@ async function uploadFile() {
     } else {
       addLog("CRC32 not available for this file.");
     }
+    if (state.crc_match === "match") {
+      const proceed = window.confirm(
+        "Device CRC32 matches this file. Upload anyway?"
+      );
+      allowUpload = proceed;
+      if (!proceed) {
+        addLog("Upload canceled (CRC32 matches device).");
+      }
+    } else {
+      allowUpload = true;
+    }
     setStatus(state);
+    startUploadBtn.disabled = !allowUpload;
   } catch (error) {
     addLog(`Upload failed: ${error.message}`);
   }
 }
 
 async function startUpload() {
+  if (!allowUpload) {
+    addLog("Upload blocked: CRC32 matches device.");
+    return;
+  }
   const state = await fetchJson("/start_upload", { method: "POST" });
   setStatus(state);
 }
@@ -205,7 +240,6 @@ connectBtn.addEventListener("click", () => {
 });
 uploadBtn.addEventListener("click", uploadFile);
 startUploadBtn.addEventListener("click", startUpload);
-pollBtn.addEventListener("click", pollResponses);
 clearLogBtn.addEventListener("click", () => {
   logList.innerHTML = "";
   addLog("Console cleared.");

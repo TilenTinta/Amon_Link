@@ -28,7 +28,7 @@ body {
 }
 
 .app {
-  max-width: 1100px;
+  max-width: 1360px;
   margin: 0 auto;
   padding: 36px 28px 52px;
   display: flex;
@@ -38,10 +38,15 @@ body {
 
 .header {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   justify-content: space-between;
   gap: 24px;
   align-items: flex-start;
+}
+
+.title-block {
+  flex: 1;
+  min-width: 320px;
 }
 
 .title-block h1 {
@@ -111,7 +116,7 @@ body {
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
   gap: 20px;
 }
 
@@ -261,6 +266,9 @@ button.ghost {
 }
 
 @media (max-width: 720px) {
+  .header {
+    flex-wrap: wrap;
+  }
   .status-panel {
     width: 100%;
   }

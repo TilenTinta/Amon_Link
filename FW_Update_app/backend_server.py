@@ -11,7 +11,19 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from application.backend import backend
-from application.protocol import parse_packet
+from application.protocol import (
+    CMD_ACK,
+    CMD_END_OF_FW,
+    CMD_WRITE,
+    CODE_BOOT_VER,
+    CODE_DATA_WRITEN,
+    CODE_EXIT_BOOT,
+    CODE_SW_CRC,
+    ID_LINK_BOOT,
+    build_packet,
+    crc16_cal,
+    parse_packet,
+)
 
 
 class AppState:
@@ -23,6 +35,9 @@ class AppState:
         self.upload_progress = 0
         self.is_uploading = False
         self.upload_crc32 = ""
+        self.device_boot_ver = ""
+        self.device_crc32 = ""
+        self.crc_match = ""
 
 
 state = AppState()
@@ -58,6 +73,9 @@ def _state_snapshot(extra: dict[str, Any] | None = None) -> dict[str, Any]:
             "upload_progress": state.upload_progress,
             "is_uploading": state.is_uploading,
             "upload_crc32": state.upload_crc32,
+            "device_boot_ver": state.device_boot_ver,
+            "device_crc32": state.device_crc32,
+            "crc_match": state.crc_match,
         }
     if extra:
         snapshot.update(extra)
@@ -81,10 +99,10 @@ def _set_upload_state(
     progress: int | None = None,
     is_uploading: bool | None = None,
     crc32: str | None = None,
-) -> None:
-    with state_lock:
-        if path is not None:
-            state.upload_path = path
+    ) -> None:
+        with state_lock:
+            if path is not None:
+                state.upload_path = path
         if name is not None:
             state.upload_name = name
         if progress is not None:
@@ -95,14 +113,30 @@ def _set_upload_state(
             state.upload_crc32 = crc32
 
 
+def _set_device_state(
+    *,
+    boot_ver: str | None = None,
+    crc32: str | None = None,
+    crc_match: str | None = None,
+) -> None:
+    with state_lock:
+        if boot_ver is not None:
+            state.device_boot_ver = boot_ver
+        if crc32 is not None:
+            state.device_crc32 = crc32
+        if crc_match is not None:
+            state.crc_match = crc_match
+
+
 def _crc32_hex(data: bytes) -> str:
     return f"0x{zlib.crc32(data) & 0xFFFFFFFF:08X}"
 
 
-def _hex_to_bin(data: bytes) -> bytes:
-    """Parse Intel HEX into raw binary bytes."""
+def _hex_to_bin(data: bytes, start_addr: int | None = None) -> bytes:
+    """Parse Intel HEX into raw binary bytes, optionally trimming below start_addr."""
     base_addr = 0
     chunks: dict[int, bytes] = {}
+    min_addr: int | None = None
     max_addr = 0
 
     for raw_line in data.splitlines():
@@ -121,7 +155,18 @@ def _hex_to_bin(data: bytes) -> bytes:
 
         if record_type == 0x00:
             abs_addr = base_addr + address
+            if start_addr is not None:
+                if abs_addr + len(payload) <= start_addr:
+                    continue
+                if abs_addr < start_addr:
+                    offset = start_addr - abs_addr
+                    payload = payload[offset:]
+                    abs_addr = start_addr
+            if not payload:
+                continue
             chunks[abs_addr] = payload
+            if min_addr is None or abs_addr < min_addr:
+                min_addr = abs_addr
             max_addr = max(max_addr, abs_addr + len(payload))
         elif record_type == 0x01:
             break
@@ -132,11 +177,13 @@ def _hex_to_bin(data: bytes) -> bytes:
         else:
             continue
 
-    if not chunks:
+    if not chunks or min_addr is None:
         return b""
-    blob = bytearray(b"\xFF" * max_addr)
+    span = max_addr - min_addr
+    blob = bytearray(b"\xFF" * span)
     for addr, payload in chunks.items():
-        blob[addr:addr + len(payload)] = payload
+        offset = addr - min_addr
+        blob[offset:offset + len(payload)] = payload
     return bytes(blob)
 
 
@@ -159,10 +206,46 @@ def _format_response(resp: bytes | tuple[str, str]) -> str:
 
     try:
         addr, cmd, payload = parse_packet(resp)
+        if cmd == CMD_ACK:
+            info = _parse_info_payload(payload)
+            if info:
+                boot_ver = info["boot_ver"]
+                device_crc32 = info["device_crc32"]
+                message = (
+                    f"Info: boot ver 0x{boot_ver:02X}, device CRC32 {device_crc32}"
+                )
+                _set_device_state(
+                    boot_ver=f"0x{boot_ver:02X}",
+                    crc32=device_crc32,
+                    crc_match="",
+                )
+                if state.upload_crc32:
+                    matches = state.upload_crc32.upper() == device_crc32
+                    if matches:
+                        message += " (matches upload, no update needed)"
+                        _set_device_state(crc_match="match")
+                    else:
+                        message += " (differs from upload, update needed)"
+                        _set_device_state(crc_match="mismatch")
+                return message
+
         payload_hex = payload.hex() or "0x00"
         return f"Addr {hex(addr)} Cmd {hex(cmd)} Payload {payload_hex}"
     except ValueError:
         return f"Raw: {resp.hex()}"
+
+
+def _parse_info_payload(payload: bytes) -> dict[str, int | str] | None:
+    if len(payload) < 7:
+        return None
+    if payload[0] != CODE_BOOT_VER or payload[2] != CODE_SW_CRC:
+        return None
+    boot_ver = payload[1]
+    device_crc32 = int.from_bytes(payload[3:7], "big")
+    return {
+        "boot_ver": boot_ver,
+        "device_crc32": f"0x{device_crc32:08X}",
+    }
 
 
 @app.get("/ports")
@@ -181,11 +264,20 @@ def connect(request: ConnectRequest) -> dict[str, Any]:
         raise HTTPException(status_code=400, detail="Port is required.")
     error = None
     try:
+        print(f"CONNECT start {request.port} @ {request.baud_rate}", flush=True)
+        _set_device_state(boot_ver="", crc32="", crc_match="")
+        _set_last_message(f"Opening {request.port} @ {request.baud_rate}")
         backend.connect(request.port, int(request.baud_rate))
-        backend.send_get_info()
+        print("CONNECT opened port", flush=True)
+        time.sleep(0.25)
+        packet = backend.send_get_info()
+        print(f"CONNECT sent GET_INFO {packet.hex()}", flush=True)
+        _set_last_message(f"Sent GET_INFO {packet.hex()}")
         _set_status(f"Connected to {request.port}")
     except Exception as exc:  # noqa: BLE001
         error = str(exc)
+        print(f"CONNECT failed: {exc}", flush=True)
+        _set_last_message(f"Connect failed: {exc}")
         _set_status(f"Failed to connect: {exc}")
     return _state_snapshot({"error": error})
 
@@ -194,6 +286,7 @@ def connect(request: ConnectRequest) -> dict[str, Any]:
 def disconnect() -> dict[str, Any]:
     backend.disconnect()
     _set_status("Disconnected")
+    _set_device_state(boot_ver="", crc32="", crc_match="")
     return _state_snapshot()
 
 
@@ -235,6 +328,14 @@ def upload(file: UploadFile = File(...)) -> dict[str, Any]:
         is_uploading=False,
         crc32=crc32,
     )
+    with state_lock:
+        device_crc32 = state.device_crc32
+        upload_crc32 = state.upload_crc32
+    if device_crc32 and upload_crc32:
+        if device_crc32.upper() == upload_crc32.upper():
+            _set_device_state(crc_match="match")
+        else:
+            _set_device_state(crc_match="mismatch")
     _set_last_message(f"Loaded {file_name} ({len(data)} bytes)")
     return _state_snapshot()
 
@@ -249,13 +350,54 @@ def _upload_worker(path: str, chunk_size: int, delay_s: float) -> None:
 
         sent = 0
         total = len(data)
-        for start in range(0, total, chunk_size):
-            chunk = data[start : start + chunk_size]
-            backend.send_bytes(chunk)
-            sent += len(chunk)
+        padded_chunk_size = max(1, chunk_size)
+        for index, start in enumerate(range(0, total, padded_chunk_size), start=1):
+            chunk = data[start : start + padded_chunk_size]
+            if len(chunk) < padded_chunk_size:
+                chunk = chunk + b"\xFF" * (padded_chunk_size - len(chunk))
+
+            packet = build_packet(ID_LINK_BOOT, CMD_WRITE, payload=chunk)
+            backend.send_bytes(packet)
+            expected_crc = crc16_cal(chunk)
+            if not backend.wait_for_ack(
+                expected_code=CODE_DATA_WRITEN,
+                expected_crc16=expected_crc,
+                timeout_s=2.0,
+            ):
+                _set_status(f"Upload failed: no ACK at chunk {index}")
+                return
+
+            sent += min(padded_chunk_size, total - start)
             progress = int((sent / total) * 100)
             _set_upload_state(progress=progress)
-            time.sleep(delay_s)
+            if delay_s:
+                time.sleep(delay_s)
+
+        with state_lock:
+            upload_crc32 = state.upload_crc32
+        if not upload_crc32:
+            _set_status("Upload failed: missing CRC32 for end packet")
+            return
+        crc32_value = int(upload_crc32, 16)
+        end_payload = bytes(
+            [
+                0x00,
+                (crc32_value >> 24) & 0xFF,
+                (crc32_value >> 16) & 0xFF,
+                (crc32_value >> 8) & 0xFF,
+                crc32_value & 0xFF,
+            ]
+        )
+        end_packet = build_packet(ID_LINK_BOOT, CMD_END_OF_FW, payload=end_payload)
+        backend.send_bytes(end_packet)
+        expected_crc = crc16_cal(end_payload)
+        if not backend.wait_for_ack(
+            expected_code=CODE_EXIT_BOOT,
+            expected_crc16=expected_crc,
+            timeout_s=2.0,
+        ):
+            _set_status("Upload failed: no ACK for end packet")
+            return
         _set_status(f"Uploaded {state.upload_name}")
     except Exception as exc:  # noqa: BLE001
         _set_status(f"Upload failed: {exc}")
@@ -277,11 +419,11 @@ def start_upload(request: UploadStartRequest | None = None) -> dict[str, Any]:
     if is_uploading:
         raise HTTPException(status_code=409, detail="Upload already in progress.")
 
-    chunk_size = 256
+    chunk_size = 64
     delay_s = 0.01
     if request:
         if request.chunk_size:
-            chunk_size = max(64, min(1024, request.chunk_size))
+            chunk_size = max(64, min(256, request.chunk_size))
         if request.delay_ms is not None:
             delay_s = max(0.0, request.delay_ms / 1000.0)
 

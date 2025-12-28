@@ -4,8 +4,8 @@
 			"path": "."
 		},
 		{
-			"name": "Firmware",
-			"path": "../"
+			"name": "CH32V003F4P6",
+			"path": "c:\\DATA\\Projects\\Amon_Link\\Bootloader\\CH32V003F4P6"
 		}
 	],
 	"settings": {

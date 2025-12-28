@@ -9,17 +9,38 @@ import time
 
 
 class SerialComm:
-    def __init__(self, port, baudrate, response_queue, timeout=0.5):
+    def __init__(self, port, baudrate, response_queue, timeout=0.5, open_timeout_s=2.0):
         self.port_name = port
         self.baudrate = baudrate
         self.response_queue = response_queue
         self.timeout = timeout
+        self.open_timeout_s = open_timeout_s
         self.ser = None
         self.alive = threading.Event()
         self.thread = threading.Thread(target=self._reader_thread, daemon=True)
 
+    def _open_serial(self):
+        self.ser = serial.Serial(
+            self.port_name,
+            baudrate=self.baudrate,
+            timeout=self.timeout,
+        )
+
     def open(self):
-        self.ser = serial.Serial(self.port_name, baudrate=self.baudrate, timeout=self.timeout)
+        try:
+            open_thread = threading.Thread(target=self._open_serial, daemon=True)
+            open_thread.start()
+            open_thread.join(self.open_timeout_s)
+            if open_thread.is_alive():
+                raise RuntimeError(
+                    f"Timed out opening {self.port_name} after {self.open_timeout_s}s"
+                )
+            if self.ser is None:
+                raise RuntimeError(f"Failed to open {self.port_name}")
+        except serial.SerialException as exc:
+            raise RuntimeError(f"Failed to open {self.port_name}: {exc}") from exc
+        self.ser.reset_input_buffer()
+        self.ser.reset_output_buffer()
         self.alive.set()
         self.thread.start()
 

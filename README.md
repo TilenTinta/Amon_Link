@@ -109,6 +109,12 @@ SECTIONS
     ...
 ```
 
+The firmware can be updated using a graphical application. The application is built with a Python backend and an Electron front end. You can select and import either a hex or a binary file. Once imported, the CRC32 checksum is calculated for the file.
+
+This checksum is used during device connection. When the device connects, a handshake process exchanges several pieces of data, one of which is the CRC32 value of the firmware currently installed on the device. If this CRC matches the one from the new file, you are notified before proceeding with the update. After a successful update, the new CRC32 value is written to the device for future reference.
+
+![Amon Link fw app](https://github.com/TilenTinta/Amon_Link/blob/main/Images/FW_Update_app.png)  
+
 ---
 
 ## Debugging
