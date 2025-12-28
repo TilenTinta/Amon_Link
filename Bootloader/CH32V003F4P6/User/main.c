@@ -37,7 +37,7 @@ s_meta_data metadata;
 typedef void (*app_entry_t)(void);
 
 /* Variables */
-uint32_t device_id = 0;
+//uint32_t device_id = 0;
 
 
 int main(void)
@@ -47,7 +47,12 @@ int main(void)
     LinkPinout_Init();
     USART1_Init();
 
-    device_id = DBGMCU_GetCHIPID();             // Get unic device ID
+    //device_id = DBGMCU_GetCHIPID();             // Get unic device ID
+
+    /* For test/development */
+    // metadata.flags = 0x01;
+    // metadata.fw_crc32 = 0x12345678;
+    // flash_save_metadata(&metadata);
 
     flash_read_crc32(&metadata);                 // Read current firmware crc32 value 
     flash_read_boot_flag(&metadata);             // Read flag from flash - select staying in bootloader or not
@@ -67,7 +72,7 @@ int main(void)
             /* Wait for received data */
             if (buffers.flag_USB_RX_end == 1) 
             {
-                UART_decode(buffers.buffer_UART); 
+                UART_decode(&buffers.buffer_UART[0]); 
                 buffers.flag_USB_RX_end = 0;   
                 UART_buffer_clear();           
             }
@@ -215,8 +220,8 @@ void USART1_IRQHandler(void)
 {
     if(USART_GetITStatus(USART1, USART_IT_RXNE) != RESET)
     {
-        uint8_t len_new_rx_data = 0;
-        uint8_t cntBuffer_UART = 0;
+        static uint8_t len_new_rx_data = 0;
+        static uint8_t cntBuffer_UART = 0;
 
         // Save received data
         uint8_t data = USART_ReceiveData(USART1);                               // Read only once
@@ -238,6 +243,7 @@ void USART1_IRQHandler(void)
         {
             buffers.flag_USB_RX_end = 1;                                        // Indicate end of packet
             cntBuffer_UART = 0;                                                 // Clear UART counter
+            len_new_rx_data = 0;                                                // Set expected data to 0
         }
 
         // Clear RX flag (otherwise constantly triggered IRQ)
@@ -305,7 +311,7 @@ void UART_decode(uint8_t* raw_uart_data)
     UART_packet_parse(raw_uart_data);
 
     // CRC check
-    uint16_t cal_CRC = crc16_cal(&raw_uart_data[1], packet.plen);   // CRC calculate over: PLEN + ADDR + CMD + payload
+    uint16_t cal_CRC = crc16_cal(&raw_uart_data[1], packet.plen - 1);   // CRC calculate over: PLEN + ADDR + CMD + payload (-1 because of PLEN)
 
     if (cal_CRC != packet.crc16)
     {
@@ -315,10 +321,13 @@ void UART_decode(uint8_t* raw_uart_data)
         buffers.buffer_UART[2] = ID_PC;
         buffers.buffer_UART[3] = CMD_ERR;
         buffers.buffer_UART[4] = CODE_BAD_CRC;
-        buffers.buffer_UART[5] = crc16_cal(&buffers.buffer_UART[1], 4);
+        uint16_t crc_temp = crc16_cal(&buffers.buffer_UART[1], 4);
+        buffers.buffer_UART[5] = (uint8_t)(crc_temp);
+        buffers.buffer_UART[6] = (uint8_t)(crc_temp >> 8);
 
         // Send
         UartSendBuffer(buffers.buffer_UART, sizeof(buffers.buffer_UART));
+        UART_buffer_clear();
         return;
     } 
 
@@ -369,8 +378,8 @@ void UART_decode(uint8_t* raw_uart_data)
                     buffers.buffer_UART[9] = (uint8_t)(metadata.fw_crc32 >> 8);
                     buffers.buffer_UART[10] = (uint8_t)(metadata.fw_crc32);
                     uint16_t crc_temp = crc16_cal(&buffers.buffer_UART[1], 10);
-                    buffers.buffer_UART[11] = (uint8_t)(crc_temp >> 8);
-                    buffers.buffer_UART[12] = (uint8_t)(crc_temp);
+                    buffers.buffer_UART[11] = (uint8_t)(crc_temp);
+                    buffers.buffer_UART[12] = (uint8_t)(crc_temp >> 8);
 
                     // Send
                     UartSendBuffer(buffers.buffer_UART, sizeof(buffers.buffer_UART));
@@ -379,11 +388,6 @@ void UART_decode(uint8_t* raw_uart_data)
 
                 case CMD_WRITE:
                     {
-                        // uint32_t addr = packet.payload[0]    |
-                        //            (packet.payload[1] << 8)  |
-                        //            (packet.payload[2] << 16) |
-                        //            (packet.payload[3] << 24);
-
                         flash_write_page(&buffers, packet.payload);
 
                         // Send a response 
@@ -392,7 +396,9 @@ void UART_decode(uint8_t* raw_uart_data)
                         buffers.buffer_UART[2] = ID_PC;
                         buffers.buffer_UART[3] = CMD_ACK;
                         buffers.buffer_UART[4] = CODE_DATA_WRITEN;
-                        buffers.buffer_UART[5] = crc16_cal(&buffers.buffer_UART[1], 4);
+                        uint16_t crc_temp = crc16_cal(&buffers.buffer_UART[1], 4);
+                        buffers.buffer_UART[5] = (uint8_t)(crc_temp);
+                        buffers.buffer_UART[6] = (uint8_t)(crc_temp >> 8);
 
                         // Send
                         UartSendBuffer(buffers.buffer_UART, sizeof(buffers.buffer_UART));
@@ -416,7 +422,9 @@ void UART_decode(uint8_t* raw_uart_data)
                         buffers.buffer_UART[2] = ID_PC;
                         buffers.buffer_UART[3] = CMD_ACK;
                         buffers.buffer_UART[4] = CODE_EXIT_BOOT;
-                        buffers.buffer_UART[5] = crc16_cal(&buffers.buffer_UART[1], 4);
+                        uint16_t crc_temp = crc16_cal(&buffers.buffer_UART[1], 4);
+                        buffers.buffer_UART[5] = (uint8_t)(crc_temp);
+                        buffers.buffer_UART[6] = (uint8_t)(crc_temp >> 8);
 
                         // Send
                         UartSendBuffer(buffers.buffer_UART,sizeof(buffers.buffer_UART));
@@ -429,21 +437,25 @@ void UART_decode(uint8_t* raw_uart_data)
                     
 
                 case CMD_JUMP_APP:
+                    {
+                        // Send a response 
+                        buffers.buffer_UART[0] = SIG_SOF;
+                        buffers.buffer_UART[1] = 5;
+                        buffers.buffer_UART[2] = ID_PC;
+                        buffers.buffer_UART[3] = CMD_ACK;
+                        buffers.buffer_UART[4] = CODE_EXIT_BOOT;
+                        uint16_t crc_temp = crc16_cal(&buffers.buffer_UART[1], 4);
+                        buffers.buffer_UART[5] = (uint8_t)(crc_temp);
+                        buffers.buffer_UART[6] = (uint8_t)(crc_temp >> 8);
 
-                    // Send a response 
-                    buffers.buffer_UART[0] = SIG_SOF;
-                    buffers.buffer_UART[1] = 5;
-                    buffers.buffer_UART[2] = ID_PC;
-                    buffers.buffer_UART[3] = CMD_ACK;
-                    buffers.buffer_UART[4] = CODE_EXIT_BOOT;
-                    buffers.buffer_UART[5] = crc16_cal(&buffers.buffer_UART[1], 4);
+                        // Send
+                        UartSendBuffer(buffers.buffer_UART,sizeof(buffers.buffer_UART));
 
-                    // Send
-                    UartSendBuffer(buffers.buffer_UART,sizeof(buffers.buffer_UART));
+                        jump_to_app();
 
-                    jump_to_app();
-
-                    break;
+                        break;
+                    }
+                    
             }
             break;
 
@@ -474,18 +486,23 @@ void UART_packet_parse(uint8_t *raw_data)
     //      Full packet bytes: ['0xaa', '0x4', '0x10', '0x1', '0xfc', '0x1']
 
     // packet.sof = *raw_data;
-    packet.plen = *(raw_data + 1) - 2;      // Without CRC16 (and SOF)
+    packet.plen = *(raw_data + 1);      // Without CRC16 (and SOF)
     packet.addr = *(raw_data + 2);
     packet.cmd = *(raw_data + 3);
-    if (packet.plen - 2 > 0)                // CRC16 is not counted and ADDR and CMD are not payload
+
+    if (packet.plen > 4)                // 4 bytes does not have payload (only: ADDR, CMD, CRC16_1, CRC16_2)
     {
-        for (int i = 0; i < packet.plen; i++)
+        for (int i = 0; i < packet.plen - 4; i++)
         {
             packet.payload[i] = *(raw_data + HEADER_SHIFT + i);
-        }  
+        }
     }
-    
-    packet.crc16 = (uint16_t)*(raw_data + (HEADER_SHIFT + packet.plen - 2)) | ((uint16_t)*(raw_data + (HEADER_SHIFT + packet.plen - 1)) << 8);
+
+    uint16_t crc1_tmp = (uint16_t)*(raw_data + packet.plen);
+    uint16_t crc2_tmp = (uint16_t)*(raw_data + packet.plen + 1) << 8;
+    packet.crc16 = crc1_tmp | crc2_tmp;
+
+    //packet.crc16 = (uint16_t)*(raw_data + (packet.plen)) | ((uint16_t)*(raw_data + (packet.plen - 1)) << 8);
 }
 
 
@@ -503,27 +520,28 @@ void UART_packet_parse(uint8_t *raw_data)
 void flash_write_page(s_buffers *address, uint8_t *data)
 {
     // Do not allow firmware update bo write over metadata page
-    if (address->flash_address_cnt == APP_METADATA_ADDR) return;
+    if (address->flash_address_cnt >= APP_METADATA_ADDR) return;
 
     // Unlock, clear all flags that may be set, errase page you want to write to
-    FLASH_Unlock();
+    FLASH_Unlock_Fast();
     FLASH_ClearFlag(FLASH_FLAG_EOP | FLASH_FLAG_WRPRTERR | FLASH_FLAG_OPTERR);
-    FLASH_ErasePage(address->flash_address_cnt);
+    FLASH_ErasePage_Fast(address->flash_address_cnt);
+    while(FLASH_GetStatus() == FLASH_BUSY);
 
     // Write all data
     for(uint8_t i = 0; i < PAGE_SIZE; i += 4)
     {
-        uint32_t word =  data[i] |
-                        (data[i+1] << 8) |
-                        (data[i+2] << 16) |
-                        (data[i+3] << 24);
+        uint32_t word = (uint32_t)data[i]     |
+                ((uint32_t)data[i + 1] << 8)  |
+                ((uint32_t)data[i + 2] << 16) |
+                ((uint32_t)data[i + 3] << 24);
 
         FLASH_ProgramWord(address->flash_address_cnt + i, word);
         while(FLASH_GetStatus() == FLASH_BUSY);
     }
 
     // Lock flash and increase counter to next page
-    FLASH_Lock();
+    FLASH_Lock_Fast();
     address->flash_address_cnt += PAGE_SIZE;
 }
 
@@ -573,14 +591,17 @@ void flash_read_crc32(s_meta_data *data)
 void flash_save_metadata(s_meta_data *data)
 {
     // Unlock, clear all flags that may be set, errase page you want to write to
-    FLASH_Unlock();
+    FLASH_Unlock_Fast();
     FLASH_ClearFlag(FLASH_FLAG_EOP | FLASH_FLAG_WRPRTERR | FLASH_FLAG_OPTERR);
-    FLASH_ErasePage(APP_METADATA_ADDR);
+    FLASH_ErasePage_Fast(APP_METADATA_ADDR);
+    while(FLASH_GetStatus() == FLASH_BUSY);
 
     FLASH_ProgramWord(APP_METADATA_ADDR + 0,  (uint32_t)data->flags);
+    while(FLASH_GetStatus() == FLASH_BUSY);
     FLASH_ProgramWord(APP_METADATA_ADDR + 4,  data->fw_crc32);
+    while(FLASH_GetStatus() == FLASH_BUSY);
 
-    FLASH_Lock();
+    FLASH_Lock_Fast();
 }
 
 
@@ -604,7 +625,7 @@ uint16_t crc16_cal(const uint8_t *data, uint16_t length)
 
     for (uint16_t i = 0; i < length; i++)
     {
-        crc ^= data[i];                     // XOR byte into least sig. byte of crc
+        crc ^= *(data+i);                     // XOR byte into least sig. byte of crc
 
         for (uint8_t j = 8; j != 0; j--)    // Loop over each bit
         {

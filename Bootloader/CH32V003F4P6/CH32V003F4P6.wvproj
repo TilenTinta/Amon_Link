@@ -44,7 +44,7 @@
 				"post_script_description": "",
 				"excludeResources": [],
 				"optimization": {
-					"level": "debug",
+					"level": "optimize",
 					"message_length": true,
 					"char_is_signed": true,
 					"function_sections": true,

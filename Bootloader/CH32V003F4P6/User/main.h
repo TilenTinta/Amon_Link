@@ -21,7 +21,7 @@
 
 // Device constants
 #define BOOT_DATE           "October 2025"          // Date of software
-#define BOOT_VER              0x01                  // Version of software
+#define BOOT_VER            0x01                    // Version of software
 #define APP_START_ADDRESS  ((uint32_t)0x00001000u)  // Start address of the main program (jump location)
 #define APP_FW_START_ADDR   0x08001000              // Start address for firmware update
 #define APP_END_ADDRESS     0x08004000              // End address of flash
@@ -49,7 +49,7 @@
  *	  - CRC16  (2B): CRC-16/CCITT (poly 0x1021, init 0xFFFF) over LEN..PAYLOAD
  */
 
-#define HEADER_SHIFT        0x04                    // Number of bytes before payload
+#define HEADER_SHIFT            0x04                // Number of bytes before payload
 
 // Signaling (1 byte)
 #define SIG_SOF                 0xAA                // Start-Of-Frame
@@ -84,11 +84,11 @@
 typedef struct {
 
     // PC -> Link -> PC //
-    uint8_t     buffer_UART[128];                   // Buffer for saving USB data
-    uint8_t     flag_new_uart_rx_data;              // Flag indicating a new data has arrived (packet is not complete)
-    //uint8_t     flag_new_uart_tx_data;              // Flag indicating a new data is ready to send
-    uint8_t     flag_USB_RX_end;                    // Flag for new complete USB command (PC -> link) - start decode
-    uint32_t    flash_address_cnt;                  // Address counter of a current flash location
+    uint8_t             buffer_UART[128];           // Buffer for saving USB data
+    uint8_t             flag_new_uart_rx_data;      // Flag indicating a new data has arrived (packet is not complete)
+    //uint8_t     flag_new_uart_tx_data;            // Flag indicating a new data is ready to send
+    volatile uint8_t     flag_USB_RX_end;           // Flag for new complete USB command (PC -> link) - start decode
+    uint32_t            flash_address_cnt;          // Address counter of a current flash location
 
 } s_buffers;
 
