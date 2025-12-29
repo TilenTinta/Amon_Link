@@ -1,13 +1,11 @@
 /*****************************************************************
- * File Name          : bootloader.h
+ * File Name          : main.h
  * Author             : Tinta T.
  * Version            : V1.0.0
  * Date               : 2025/10/25
  * Description        : Custom bootloader for updating firmware 
  *                      over UART (USB)
 *****************************************************************/
-
-// TODO: Build - Optimized for debug!!!!!
 
 #ifndef BOOTLOADER_H
 #define BOOTLOADER_H
@@ -49,6 +47,7 @@
  *	  - CRC16  (2B): CRC-16/CCITT (poly 0x1021, init 0xFFFF) over LEN..PAYLOAD
  */
 
+// Calculation/program variable
 #define HEADER_SHIFT            0x04                // Number of bytes before payload
 
 // Signaling (1 byte)
@@ -86,8 +85,7 @@ typedef struct {
     // PC -> Link -> PC //
     uint8_t             buffer_UART[128];           // Buffer for saving USB data
     uint8_t             flag_new_uart_rx_data;      // Flag indicating a new data has arrived (packet is not complete)
-    //uint8_t     flag_new_uart_tx_data;            // Flag indicating a new data is ready to send
-    volatile uint8_t     flag_USB_RX_end;           // Flag for new complete USB command (PC -> link) - start decode
+    volatile uint8_t    flag_USB_RX_end;            // Flag for new complete USB command (PC -> link) - start decode
     uint32_t            flash_address_cnt;          // Address counter of a current flash location
 
 } s_buffers;
@@ -114,7 +112,5 @@ typedef struct {
     uint32_t fw_crc32;                              // Current fw crc32 value
 
 } s_meta_data;
-
-
 
 #endif

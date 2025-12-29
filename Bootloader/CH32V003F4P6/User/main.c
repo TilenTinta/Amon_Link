@@ -1,5 +1,5 @@
 /*****************************************************************
- * File Name          : bootloader.c
+ * File Name          : main.c
  * Author             : Tinta T.
  * Version            : V1.0.0
  * Date               : 2025/10/25
@@ -54,8 +54,8 @@ int main(void)
     // metadata.fw_crc32 = 0x12345678;
     // flash_save_metadata(&metadata);
 
-    flash_read_crc32(&metadata);                 // Read current firmware crc32 value 
-    flash_read_boot_flag(&metadata);             // Read flag from flash - select staying in bootloader or not
+    flash_read_crc32(&metadata);                  // Read current firmware crc32 value 
+    flash_read_boot_flag(&metadata);              // Read flag from flash - select staying in bootloader or not
 
     buffers.flag_USB_RX_end = 0;
     buffers.flag_new_uart_rx_data = 0;
@@ -280,7 +280,7 @@ void UART_buffer_clear(void)
 void UART_packetDataReset(void)
 {
     // Clear data struct
-    //packet.sof = 0;
+    // packet.sof = 0;
     packet.plen = 0;
     packet.addr = 0;
     packet.cmd = 0;
@@ -315,7 +315,7 @@ void UART_decode(uint8_t* raw_uart_data)
 
     if (cal_CRC != packet.crc16)
     {
-        // Send a response - error
+        // Send a response - CRC error 
         buffers.buffer_UART[0] = SIG_SOF;
         buffers.buffer_UART[1] = 5;
         buffers.buffer_UART[2] = ID_PC;
@@ -427,7 +427,7 @@ void UART_decode(uint8_t* raw_uart_data)
                         buffers.buffer_UART[6] = (uint8_t)(crc_temp >> 8);
 
                         // Send
-                        UartSendBuffer(buffers.buffer_UART,sizeof(buffers.buffer_UART));
+                        UartSendBuffer(buffers.buffer_UART, sizeof(buffers.buffer_UART));
 
                         // Jump to main application
                         jump_to_app();
@@ -449,7 +449,7 @@ void UART_decode(uint8_t* raw_uart_data)
                         buffers.buffer_UART[6] = (uint8_t)(crc_temp >> 8);
 
                         // Send
-                        UartSendBuffer(buffers.buffer_UART,sizeof(buffers.buffer_UART));
+                        UartSendBuffer(buffers.buffer_UART, sizeof(buffers.buffer_UART));
 
                         jump_to_app();
 
@@ -625,7 +625,7 @@ uint16_t crc16_cal(const uint8_t *data, uint16_t length)
 
     for (uint16_t i = 0; i < length; i++)
     {
-        crc ^= *(data+i);                     // XOR byte into least sig. byte of crc
+        crc ^= *(data+i);                   // XOR byte into least sig. byte of crc
 
         for (uint8_t j = 8; j != 0; j--)    // Loop over each bit
         {
