@@ -22,16 +22,22 @@ void TIM2_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
 /*###########################################################################################################################################################*/
 /* Functions */
 
-static void USART1_Init(void);
-static void SPI1_Init(void);
-static void LinkPinout_Init(void);
-static void TIM_INT_Init(void);
-static void UartSendBuffer(uint8_t* buffer, uint16_t length);
-static void UART_buffer_clear(void);
-static void USART_DMA_TX_Config();
-static void Start_DMA_USART_TX(uint8_t len);
-static void SPI_DMA_RX_Config();
-static void Start_DMA_SPI_RX(void);
+void USART1_Init(void);
+void SPI1_Init(void);
+void LinkPinout_Init(void);
+void TIM_INT_Init(void);
+void UartSendBuffer(uint8_t* buffer, uint16_t length);
+void UART_buffer_clear(void);
+void USART_DMA_TX_Config();
+void Start_DMA_USART_TX(uint8_t len);
+void SPI_DMA_RX_Config();
+void Start_DMA_SPI_RX(void);
+
+// Bootloader related functions
+void flash_read_boot_flag(s_meta_data *data);
+void flash_read_crc32(s_meta_data *data);
+void system_reset_trigger(void);
+void flash_save_metadata(s_meta_data *data);
 
 /*###########################################################################################################################################################*/
 
@@ -40,6 +46,7 @@ static void Start_DMA_SPI_RX(void);
 /* Global define */
 DEVICE device;                                              // Device variables struct
 BUFFERS buffers;                                            // Device buffers
+s_meta_data metadata;                                       // Metadata used for bootloader
 //UART_PACKET uart_packet;                                    // UART packet parts
 nRF24L01 radio1;                                            // Radio variables 1
 nRF24L01 radio2;                                            // Radio variables 2
@@ -75,6 +82,8 @@ int main(void)
         GPIO_WriteBit(GPIOD, NRF_CS2, Bit_SET);         
 
         device.device_id = DBGMCU_GetCHIPID();              // Get unic device ID
+        flash_read_boot_flag(&metadata);                    // Read boot flag value
+        flash_read_crc32(&metadata);                        // Read current firmware CRC32
         device.version = SW_VER;                            // Version of software
         device.state = STATE_INIT;                          // Start device state
         device.conn_status = CONN_STATUS_NOK;               // Connection status
@@ -120,6 +129,8 @@ int main(void)
             // Radios initialization and setup
             NRF24_Attach(&radio1, SPI1, GPIOC, NRF_CS1, GPIOC, NRF_CE1);        // Map pins for radio 1
             NRF24_Attach(&radio2, SPI1, GPIOD, NRF_CS2, GPIOC, NRF_CE2);        // Map pins for radio 2
+
+            //system_reset_trigger(); // test
 
             uint8_t status = 0;
             if (NRF24_ReadStatus(&radio1, &status) == 0) 
@@ -258,7 +269,7 @@ int main(void)
  *
  * @return  none
  */
-static void LinkPinout_Init(void)
+void LinkPinout_Init(void)
 {
     GPIO_InitTypeDef  GPIO_InitStructure = {0};
     EXTI_InitTypeDef EXTI_InitStructure = {0};
@@ -370,7 +381,7 @@ static void LinkPinout_Init(void)
  *
  * @return  none
  */
-static void TIM_INT_Init(void)
+void TIM_INT_Init(void)
 {
     // TIM1 - Advanced-control Timer (ADTM)
     // TIM2 - General-purpose Timer (GPTM)
@@ -415,7 +426,7 @@ static void TIM_INT_Init(void)
  *
  * @return  none
  */
-static void USART1_Init(void)
+void USART1_Init(void)
 {
     GPIO_InitTypeDef  GPIO_InitStructure = {0};
     USART_InitTypeDef USART_InitStructure = {0};
@@ -469,7 +480,7 @@ static void USART1_Init(void)
  *
  * @return  none
  */
-static void USART_DMA_TX_Config(void) 
+void USART_DMA_TX_Config(void) 
 {
     DMA_InitTypeDef DMA_InitStructure = {0};                                    // DMA Init struct
 
@@ -502,7 +513,7 @@ static void USART_DMA_TX_Config(void)
  *
  * @return  none
  */
-static void Start_DMA_USART_TX(uint8_t len) 
+void Start_DMA_USART_TX(uint8_t len) 
 {
     DMA_Cmd(DMA1_Channel4, DISABLE);                                            // Disable DMA
     DMA_ClearFlag(DMA1_FLAG_TC4);                                               // Clear DMA flag if exist
@@ -521,7 +532,7 @@ static void Start_DMA_USART_TX(uint8_t len)
  *
  * @return  none
  */
-static void SPI1_Init(void)
+void SPI1_Init(void)
 {
     GPIO_InitTypeDef  GPIO_InitStructure;
     //SPI_InitTypeDef   SPI_InitStructure;
@@ -567,7 +578,7 @@ static void SPI1_Init(void)
  *
  * @return  none
  */
-static void SPI_DMA_RX_Config(void) 
+void SPI_DMA_RX_Config(void) 
 {
     DMA_InitTypeDef DMA_InitStructure = {0};                                    // DMA Init struct
 
@@ -600,7 +611,7 @@ static void SPI_DMA_RX_Config(void)
  *
  * @return  none
  */
-static void Start_DMA_SPI_RX(void) 
+void Start_DMA_SPI_RX(void) 
 {
     DMA_Cmd(DMA1_Channel2, DISABLE);                                            // Disable DMA
     DMA_ClearFlag(DMA1_FLAG_TC2);                                               // Clear DMA flag if exist
@@ -618,7 +629,7 @@ static void Start_DMA_SPI_RX(void)
  *
  * @return  none
  */
-static void UartSendBuffer(uint8_t* buffer, uint16_t length)
+void UartSendBuffer(uint8_t* buffer, uint16_t length)
 {
     DMA_Cmd(DMA1_Channel4, DISABLE);                                            // Disable DMA
 
@@ -688,7 +699,7 @@ void USART1_IRQHandler(void)
  *
  * @return  none
  */
-static void UART_buffer_clear(void)
+void UART_buffer_clear(void)
 {
     // Clear buffer
     for (int i = 0; i < sizeof(buffers.buffer_UART); i++)
@@ -799,5 +810,84 @@ void TIM2_IRQHandler(void)
     }
 }
 
+
+
+/*********************************************************************
+ * @fcn     flash_read_boot_flag
+ *
+ * @param *data: pointer to metadata struct
+ *
+ * @brief   Read value of a boot flag from flash
+ *
+ * @return  none
+ */
+void flash_read_boot_flag(s_meta_data *data)
+{
+    data->flags = *(volatile uint8_t*)(APP_METADATA_ADDR);
+}
+
+
+
+/*********************************************************************
+ * @fcn     flash_read_crc32
+ *
+ * @param *data: pointer to metadata struct pointer
+ *
+ * @brief   Read CRC32 value of current firmware used
+ *
+ * @return  none
+ */
+void flash_read_crc32(s_meta_data *data)
+{
+    data->fw_crc32 = *(volatile uint32_t*)(APP_METADATA_ADDR + 4);
+}
+
+
+
+/*********************************************************************
+ * @fcn     flash_save_metadata
+ *
+ * @param   Metadata struct pointer
+ *
+ * @brief   Write metadata values to flash
+ *
+ * @return  none
+ */
+void flash_save_metadata(s_meta_data *data)
+{
+    // Unlock, clear all flags that may be set, errase page you want to write to
+    FLASH_Unlock_Fast();
+    FLASH_ClearFlag(FLASH_FLAG_EOP | FLASH_FLAG_WRPRTERR | FLASH_FLAG_OPTERR);
+    FLASH_ErasePage_Fast(APP_METADATA_ADDR);
+    while(FLASH_GetStatus() == FLASH_BUSY);
+
+    FLASH_ProgramWord(APP_METADATA_ADDR + 0,  (uint32_t)data->flags);
+    while(FLASH_GetStatus() == FLASH_BUSY);
+    FLASH_ProgramWord(APP_METADATA_ADDR + 4,  data->fw_crc32);
+    while(FLASH_GetStatus() == FLASH_BUSY);
+
+    FLASH_Lock_Fast();
+}
+
+
+
+/*********************************************************************
+ * @fn      system_reset_trigger
+ *
+ * @brief   trigger system/mcu reset 
+ *          ! Only to enter bootloader
+ *
+ * @return  none
+ */
+void system_reset_trigger(void)
+{
+    __disable_irq();
+
+    metadata.flags = 1; // stay in bootloader
+    flash_save_metadata(&metadata);
+
+    NVIC_SystemReset();
+    while(1); // wait for reset
+}
 
 

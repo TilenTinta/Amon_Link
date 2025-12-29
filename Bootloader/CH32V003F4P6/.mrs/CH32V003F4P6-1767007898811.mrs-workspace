@@ -4,13 +4,12 @@
 			"path": "."
 		},
 		{
-			"name": "Firmware",
-			"path": "c:\\DATA\\Projects\\Amon_Link\\Firmware\\CH32V003F4P6"
+			"name": "CH32V003F4P6",
+			"path": "c:\\DATA\\Projects\\Amon_Link\\Bootloader\\CH32V003F4P6"
 		}
 	],
 	"settings": {
 		"mrs.workspace.type": "project",
-		"mrs.init.arg": "",
 		"files.associations": {
 			"*.c": "c",
 			"*.h": "cpp",

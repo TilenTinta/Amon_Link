@@ -8,38 +8,91 @@
 
 #include "dataDecoder.h"
 
-UART_PACKET uart_packet;    // UART packet parts
+/* Structs */
+s_uart_packet uart_packet;      // UART packet - application format
+s_boot_packet boot_packet;      // UART packet - bootloader format
+
 
 /* Local function */
-static void UART_packetDataReset(void);
 static void UART_packetDataReset(void);
 
 
  /*********************************************************************
  * @fcn     UART_packet_parse
  *
+ * @param *raw_data: pointer to raw data received over uart
+ *
  * @brief   Spliting packet in to information parts
  *
  * @return  none
  */
 
-void UART_packet_parse(uint8_t* raw_data)
+void UART_packet_parse(s_uart_packet *data, uint8_t *raw_data)
 {
-    uart_packet.sof = *raw_data;
-    uart_packet.len = *(raw_data + 1);
-    uart_packet.version = *(raw_data + 2);
-    uart_packet.flags = *(raw_data + 3);
-    uart_packet.src_id = *(raw_data + 4);
-    uart_packet.dist_id = *(raw_data + 5);
-    uart_packet.opcode = *(raw_data + 6);
-    uart_packet.plen = *(raw_data + 7);
-    for (int i = 0; i < uart_packet.plen; i++)
+    data->sof       = *raw_data;
+    data->len       = *(raw_data + 1);
+    data->version   = *(raw_data + 2);
+    data->flags     = *(raw_data + 3);
+    data->src_id    = *(raw_data + 4);
+    data->dist_id   = *(raw_data + 5);
+    data->opcode    = *(raw_data + 6);
+    data->plen      = *(raw_data + 7);
+
+    if (data->plen > 0)                 // Detect if payload is even present
     {
-        uart_packet.payload[i] = *(raw_data + HEADER_SHIFT + i);
+        for (int i = 0; i < data->plen; i++)
+        {
+            data->payload[i] = *(raw_data + HEADER_SHIFT + i);
+        }
     }
-    uart_packet.CRC = *(raw_data + (uart_packet.plen + 1));
+
+    uint16_t crc1_tmp = (uint16_t)*(raw_data + data->len);
+    uint16_t crc2_tmp = (uint16_t)*(raw_data + data->len + 1) << 8;
+    data->CRC = crc1_tmp | crc2_tmp;
 
 }
+
+
+
+ /*********************************************************************
+ * @fcn     UART_boot_packet_parse
+ *
+ * @param *raw_data: pointer to raw data packet that you want to decode in fields
+ * @param *data: pointer to packet struct
+ *
+ * @brief   Spliting packet in to information parts
+ *
+ * @return  none
+ */
+
+void UART_boot_packet_parse(s_boot_packet *data, uint8_t *raw_data)
+{
+    // Example: 
+    //      Packet structure: SOF=0xaa, PLEN=0x4, ADDR=0x10, CMD=0x1, PAYLOAD=0xXX, CRC16=0x1234
+    //      CRC16: calculated over entire packet excluding SOF and CRC16 itself
+    //      PLEN: does not count itself in its value
+    //      Full packet bytes: ['0xaa', '0x4', '0x10', '0x1', '0xfc', '0x1']
+
+    data->sof = *raw_data;
+    data->plen = *(raw_data + 1);      // Without CRC16 (and SOF)
+    data->addr = *(raw_data + 2);
+    data->cmd = *(raw_data + 3);
+
+    // if (data->plen > 4)                // 4 bytes does not have payload (only: ADDR, CMD, CRC16_1, CRC16_2)
+    // {
+    //     for (int i = 0; i < data->plen - 4; i++)
+    //     {
+    //         data->payload[i] = *(raw_data + HEADER_SHIFT + i);
+    //     }
+    // }
+
+    uint16_t crc1_tmp = (uint16_t)*(raw_data + data->plen);
+    uint16_t crc2_tmp = (uint16_t)*(raw_data + data->plen + 1) << 8;
+    data->crc16 = crc1_tmp | crc2_tmp;
+
+    //packet.crc16 = (uint16_t)*(raw_data + (packet.plen)) | ((uint16_t)*(raw_data + (packet.plen - 1)) << 8);
+}
+
 
 
 /*********************************************************************
@@ -80,10 +133,10 @@ void UART_decode(uint8_t* raw_uart_data, uint8_t* raw_rf_data, uint8_t* rf_tx_fl
 {
     // Parse received buffer
     UART_packetDataReset();
-    UART_packet_parse(raw_uart_data);
+    UART_packet_parse(&uart_packet, &raw_uart_data[0]);
 
     // Check version
-    if (uart_packet.version != DRIVER_VER) return;
+    if (uart_packet.version != PROTOCOL_VER) return;
 
     // CRC check
     uint16_t cal_CRC = 0;
@@ -96,13 +149,15 @@ void UART_decode(uint8_t* raw_uart_data, uint8_t* raw_rf_data, uint8_t* rf_tx_fl
     {
         // Destination device: PC - error
         case ID_PC:
-
             return;
+            break;
 
+        case ID_LINK_BOOT:
+            return;
             break;
 
         // Destination device: link
-        case ID_LINK:
+        case ID_LINK_SW:
             //...
             break;
 

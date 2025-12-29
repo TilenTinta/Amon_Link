@@ -20,6 +20,7 @@ const deviceCrc32 = document.getElementById("deviceCrc32");
 const crcMatch = document.getElementById("crcMatch");
 
 let allowUpload = true;
+let uploadWasInProgress = false;
 
 const actionButtons = [
   refreshPortsBtn,
@@ -70,6 +71,11 @@ function setStatus(state) {
   connectBtn.textContent = connected ? "Disconnect" : "Connect";
   connectBtn.classList.toggle("danger", connected);
   connectBtn.classList.toggle("primary", !connected);
+
+  if (uploadWasInProgress && !state.is_uploading && state.upload_progress === 100) {
+    window.alert("Firmware update finished.");
+  }
+  uploadWasInProgress = Boolean(state.is_uploading);
 }
 
 async function fetchJson(path, options = {}) {

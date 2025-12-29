@@ -24,6 +24,9 @@
 #define DEVICE_NAME    "AMON Link"      // Name of the device
 #define SW_VER              1           // Software version (used in UART packets)
 #define SW_DATE        "February 2025"  // Date of software
+#define APP_END_ADDRESS     0x08004000  // End address of flash
+#define PAGE_SIZE           64          // Page size in bytes
+#define APP_METADATA_ADDR   APP_END_ADDRESS - PAGE_SIZE // Address in flash where FW data is stored (flags, CRC32) - 64 Bytes
 
 #define FLAG_REBOOT         0x00        // TODO: Flash address of reboot mode flag (bootloader/main sw)
 #define SW_HASH             0x00        // TODO: Hash of current sw
@@ -97,6 +100,17 @@ typedef struct {
     uint8_t     bufferDMA_RF_UART[64];  // Unused?
 
 } BUFFERS;
+
+
+typedef struct {
+    
+    uint8_t flags;                                  // Flags - go to main app, stay in bootloader
+    //uint8_t reserved1;                            // Reserved byte 1 - paddinng/aligment
+    //uint8_t reserved2;                            // Reserved byte 2 - paddinng/aligment
+    //uint8_t reserved3;                            // Reserved byte 3 - paddinng/aligment
+    uint32_t fw_crc32;                              // Current fw crc32 value
+
+} s_meta_data;
 
 
 typedef struct {

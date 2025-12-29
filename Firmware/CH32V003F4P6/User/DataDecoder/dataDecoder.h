@@ -12,21 +12,23 @@
 /* Include */
 #include <stdio.h>
 
+/* --- Quick description of comm protocol --- */
+
 /* --------------------- UART ---------------------
  * + Relation: PC - Link
- * + Framing: SOF | LEN | HEADER | PAYLOAD | CRC16.
+ * + Basic framing: SOF | LEN | HEADER | PAYLOAD | CRC16.
  * + Layout (little-endian for multibyte fields):
  *	  - SOF    (1B): 0xAA
- *	  - LEN    (1B): number of bytes in HEADER+PAYLOAD (0..255)
+ *	  - LEN    (1B): number of bytes in HEADER...PAYLOAD (0..255) - LEN not included
  *	  - HEADER (6B):
  *		- VER    (1B) : protocol version (start with 0x01)
- *		- FLAGS  (1B) : bitfield (see 4)
- *		- SRC    (1B) : logical source ID
- *		- DST    (1B) : logical destination ID
- *		- OPCODE (1B) : command (see 5)
+ *		- FLAGS  (1B) : bitfield - "type of frame"
+ *		- SRC    (1B) : source address
+ *		- DST    (1B) : destination address
+ *		- OPCODE (1B) : command
  *		- PLEN   (1B) : payload length (0..N)
  *	  - PAYLOAD (PLEN bytes)
- *	  - CRC16  (2B): CRC-16/CCITT (poly 0x1021, init 0xFFFF) over LEN..PAYLOAD
+ *	  - CRC16  (2B): CRC-16/CCITT (poly 0x1021, init 0xFFFF), calculated over LEN...PAYLOAD
  */
 
 
@@ -39,27 +41,28 @@
 /*###########################################################################################################################################################*/
 
 // Driver defines
-#define DRIVER_VER              0x01    // Version of current driver
+#define PROTOCOL_VER              0x01    // Version of current driver
+#define HEADER_SHIFT            0x08    // Number of bytes before payload - used in code
 
-// Entities / IDs (1 byte)
+// Signaling (1 byte)
+#define SIG_SOF                 0xAA    // Start-Of-Frame
+
+// Address / IDs (1 byte)
 #define ID_PC                   0x01    // Address: PC
 #define ID_LINK_BOOT            0x10    // Address: Link board - bootloader
 #define ID_LINK_SW              0x11    // Address: Link board - software
 #define ID_DRONE                0x20    // Address: Drone (can be multiple)
 #define ID_BROADCAST            0xFF    // Address: Broadcast
 
-// Signaling (1 byte)
-#define HEADER_SHIFT            0x08    // Number of bytes before payload
-#define SIG_SOF                 0xAA    // Start-Of-Frame
-
-// Flags (1 byte) (bit on this place is set or not)
+// Flags (1 byte) - combined with Opcodes
 #define FLAG_ACK                0x01    // frame is a reply
 #define FLAG_ERR                0x02    // processing error; payload carries error code
 #define FLAG_STREAM             0x03    // telemetry stream frame
 #define FLAG_FRAG               0x04    // fragmented payload; optional future use
+#define FLAG_DATA               0x05    // data frame - non telemetry data
 #define FLAG_NaN                0xF0    // bit4..7: reserved
 
-// Opcodes (1 byte)
+// Opcodes (1 byte) - combined with Flags
 #define OPT_NOP                 0x00    // NOP / Reserved
 #define OPT_PING                0x01    // PING (req) / PONG (reply with status TLVs)
 #define OPT_ERROR_REPORT	    0x02    // Device error report (payload: error code + info)
@@ -87,12 +90,11 @@
 #define TVL_IMU                 0x31    // IMU raw ax/ay/az,gx/gy/gz (i16 each)
 #define TVL_GPS                 0x32    // GPS lat(i32 1e-7deg), lon(i32), alt_cm(i32)
 #define TVL_ERR                 0x7F    // Error code (u8) + detail (optional ascii)
-
+// TODO: TBD
 
 /*###########################################################################################################################################################*/
 /* Structs */
 
-// Struct where each packet get saved
 typedef struct {
     uint8_t     sof;                    // Start of frame
     uint8_t     len;                    // Lenght of the packet
@@ -104,7 +106,19 @@ typedef struct {
     uint8_t     plen;                   // Payload lenght
     uint16_t    CRC;                    // CRC calculated over len-payload
     uint8_t     payload[];              // Payload data [must be last to allow scaling]
-} UART_PACKET;
+} s_uart_packet;
+
+
+typedef struct {
+
+    uint8_t sof;                        // Start of frame
+    uint8_t plen;                       // Packet lenght
+    uint8_t addr;                       // Address of targeted device
+    uint8_t cmd;                        // Command
+    // uint8_t payload[64];                // Payload data (64bytes is one page)                            
+    uint16_t crc16;                     // CRC calculated over: plen + addr + cmd + payload
+
+} s_boot_packet;
 
 
 /*###########################################################################################################################################################*/
