@@ -39,23 +39,20 @@ void flash_read_crc32(s_meta_data *data);
 void system_reset_trigger(void);
 void flash_save_metadata(s_meta_data *data);
 
+
 /*###########################################################################################################################################################*/
-
-
-
 /* Global define */
-DEVICE device;                                              // Device variables struct
-BUFFERS buffers;                                            // Device buffers
+s_device device;                                            // Device variables struct
+s_buffers buffers;                                          // Device buffers
 s_meta_data metadata;                                       // Metadata used for bootloader
-//UART_PACKET uart_packet;                                    // UART packet parts
-nRF24L01 radio1;                                            // Radio variables 1
-nRF24L01 radio2;                                            // Radio variables 2
+//UART_PACKET uart_packet;                                  // UART packet parts
+s_nRF24L01 radio1;                                          // Radio variables 1
+s_nRF24L01 radio2;                                          // Radio variables 2
 SPI_HandleTypeDef hspi1;                                    // SPI handle
 
 
 int main(void)
 {
-
     // Device init //
     NVIC_PriorityGroupConfig(NVIC_PriorityGroup_1);         // Init NVIC
     SystemCoreClockUpdate();                                // Init all the clocks
@@ -88,6 +85,9 @@ int main(void)
         device.state = STATE_INIT;                          // Start device state
         device.conn_status = CONN_STATUS_NOK;               // Connection status
         device.conn_type = STATE_DATA_TRANSMIT;             // Communication type - clasic
+
+        radio1.op_modes = NRF_MODE_PWR_ON_RST;
+        radio2.op_modes = NRF_MODE_PWR_ON_RST;
         device.init_done = 1;                               // Block init 
 
         __enable_irq();
@@ -96,7 +96,6 @@ int main(void)
 
     while(1)
     {
-
         // If USB packet is received - decode
         if (buffers.flag_USB_RX_end == 1) 
         {
@@ -127,8 +126,10 @@ int main(void)
             UartSendBuffer((uint8_t*)newline, strlen(newline));
 
             // Radios initialization and setup
-            NRF24_Attach(&radio1, SPI1, GPIOC, NRF_CS1, GPIOC, NRF_CE1);        // Map pins for radio 1
-            NRF24_Attach(&radio2, SPI1, GPIOD, NRF_CS2, GPIOC, NRF_CE2);        // Map pins for radio 2
+            radio1.op_modes = NRF_MODE_PWR_DOWN;
+            radio2.op_modes = NRF_MODE_PWR_DOWN;
+            NRF24_pin_config(&radio1, SPI1, GPIOC, NRF_CS1, GPIOC, NRF_CE1);        // Map pins for radio 1
+            NRF24_pin_config(&radio2, SPI1, GPIOD, NRF_CS2, GPIOC, NRF_CE2);        // Map pins for radio 2
 
             //system_reset_trigger(); // test
 

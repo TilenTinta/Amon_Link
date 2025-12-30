@@ -2,7 +2,7 @@
  * File Name          : NRF24L01.h
  * Author             : Tinta T.
  * Version            : V1.0.0
- * Date               : 2025/07/06
+ * Date               : 2025/12/29
  * Description        : Driver for NRF24L01 radio (definitions and constants)
  * Documents          : nRF24L01_prodict_specification_v2_0-9199.pdf
 *****************************************************************/
@@ -17,15 +17,15 @@
 
 
 /*###########################################################################################################################################################*/
-/* Defines*/
+/* Defines */
 
 // Operating modes [Chapter 6.1, Figure 3, Table 12]
-#define MODE_PWR_ON_RST         0       // Undefined -> VDD>=1.9V
-#define MODE_PWR_DOWN           1       // Device disabled (enter: PWR_UP bit in CONFIG low)
-#define MODE_STANDBY_I          2       // Short start up times, CE low -> device from/to RX/TX returns here (enter: PWR_UP bit in CONFIG high)
-#define MODE_STANDBY_II         3       // When CE high on PTX when TX FIFO empty, new packet to FIFO starts transmit
-#define MODE_RX_MODE            4       // When receiving (enter: PWR_UP bit in CONFIG high, PRIM_RX bit high, CE pin high), data in RX FIFO, if FIFO full data discarted, CD high when signal detected
-#define MODE_TX_MODE            5       // When transmiting (enter: PWR_UP bit in CONFIG high, PRIM_RX bit low, CE pin HIGH (>10us), data in TX FIFO, if CD pin low -> Standby-I, CE high and data in FIFO -> TX mode (max 4ms), CE high and no data in FIFO -> Standby-II  
+#define NRF_MODE_PWR_ON_RST     0       // Undefined -> VDD>=1.9V
+#define NRF_MODE_PWR_DOWN       1       // Device disabled (enter: PWR_UP bit in CONFIG low)
+#define NRF_MODE_STANDBY_I      2       // Short start up times, CE low -> device from/to RX/TX returns here (enter: PWR_UP bit in CONFIG high, 1,5ms delay)
+#define NRF_MODE_STANDBY_II     3       // When CE high on PTX when TX FIFO empty, new packet to FIFO starts transmit
+#define NRF_MODE_RX_MODE        4       // When receiving (enter: PWR_UP bit in CONFIG high, PRIM_RX bit high, CE pin high), data in RX FIFO, if FIFO full data discarted, CD high when signal detected
+#define NRF_MODE_TX_MODE        5       // When transmiting (enter: PWR_UP bit in CONFIG high, PRIM_RX bit low, CE pin HIGH (>10us), data in TX FIFO, if CD pin low -> Standby-I, CE high and data in FIFO -> TX mode (max 4ms), CE high and no data in FIFO -> Standby-II  
 
 // Commands [Chapter 8.3, Table 16] (A = register map address)
 #define R_REGISTER              0x00    // 000A AAAA - Read register
@@ -78,39 +78,39 @@ typedef struct {
     SPI_TypeDef         *SPIx;          // SPI instance
     GPIO_TypeDef        *CS_Port;       // CSN port
     uint16_t            CS_Pin;         // CSN pin
-    GPIO_TypeDef        *CE_Port;       // CE  port
-    uint16_t            CE_Pin;         // CE  pin
+    GPIO_TypeDef        *CE_Port;       // CE port
+    uint16_t            CE_Pin;         // CE pin
 
     uint8_t             radioErr;       // Error flag - block device 
 
-    uint8_t             radio_preset;   // Set radio as receiver/transmiter
+    uint8_t             radio_mode;     // Set radio as receiver/transmiter
     uint8_t             radioID;        // Radio ID
     uint8_t             flag_IRQ;       // Flag that indicates interrupt
+    uint8_t             op_modes;       // value of current internal device state
     uint8_t             TX_FIFO[32];    // TX buffer
     uint8_t             RX_FIFO[32];    // RX buffer
 
-} nRF24L01;
+} s_nRF24L01;
 
 
 /*###########################################################################################################################################################*/
 /* Functions */
 
 // Attach pins to each radio
-uint8_t NRF24_Attach(nRF24L01 *dev,
-                     SPI_TypeDef *SPIx,
-                     GPIO_TypeDef *cs_port, uint16_t cs_pin,
-                     GPIO_TypeDef *ce_port, uint16_t ce_pin);
+void NRF24_pin_config(s_nRF24L01 *dev,
+                      SPI_TypeDef *SPIx,
+                      GPIO_TypeDef *cs_port, uint16_t cs_pin,
+                      GPIO_TypeDef *ce_port, uint16_t ce_pin);
 
-uint8_t NRF24_SPI_Write(nRF24L01 *dev, const uint8_t *tx, uint8_t len);                     // write data
-uint8_t NRF24_SPI_Read(nRF24L01 *dev, uint8_t *rx, uint8_t len, uint8_t fill_byte);         // read data
-uint8_t NRF24_SPI_Transceive(nRF24L01 *dev, const uint8_t *tx, uint8_t *rx, uint8_t len);   // write-read data
+uint8_t NRF24_SPI_Write(s_nRF24L01 *dev, const uint8_t *tx, uint8_t len);                     // write data
+uint8_t NRF24_SPI_Read(s_nRF24L01 *dev, uint8_t *rx, uint8_t len, uint8_t fill_byte);         // read data
+uint8_t NRF24_SPI_Transceive(s_nRF24L01 *dev, const uint8_t *tx, uint8_t *rx, uint8_t len);   // write-read data
 
 // Register helpers
-uint8_t NRF24_ReadRegister(nRF24L01 *dev, uint8_t reg, uint8_t *value, uint8_t *status_out);
-uint8_t NRF24_WriteRegister(nRF24L01 *dev, uint8_t reg, uint8_t value, uint8_t *status_out);
+uint8_t NRF24_ReadRegister(s_nRF24L01 *dev, uint8_t reg, uint8_t *value, uint8_t *status_out); // Read register
+uint8_t NRF24_WriteRegister(s_nRF24L01 *dev, uint8_t reg, uint8_t value, uint8_t *status_out); // Write register
 
-
-uint8_t NRF24_ReadStatus(nRF24L01 *dev, uint8_t *status_out);   // Alive check
+uint8_t NRF24_ReadStatus(s_nRF24L01 *dev, uint8_t *status_out);   // Alive check
 
 
 #endif /* USER_NRF24L01_NRF24L01_H_*/

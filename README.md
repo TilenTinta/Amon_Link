@@ -72,7 +72,7 @@
 1. **Connect** the Amon Link board to your PC using **USB‑C**.   
 2. **Install drivers** if required for **CH340G**.   
 3. **Place antennas** for the two NRF24L01 radios to ensure clear line‑of‑sight where possible.   
-4. **Launch** the Amon Ground Control application and select the appropriate COM/tty port. (See your GCS docs.)
+4. **Launch** the Amon Ground Control application and select the appropriate COM port.
 
 ---
 
@@ -122,12 +122,17 @@ This checksum is used during device connection. When the device connects, a hand
 
 ### LED Status Codes  
 
-| LED Pattern     | Meaning                   |
+| LED Pattern (App)     | Meaning                   |
 |-----------------|---------------------------|
 | Blinking **red**  | Device initialization     |
 | Blinking **blue** | Connecting…               |
 | Solid **blue**    | Connection established    |
 | Solid **red**     | Connection failed         |
+
+| LED Pattern (Boot)     | Meaning                   |
+|-----------------|---------------------------|
+| Solid **blue**    | Waiting on USB data    |
+
 
 ### Button Usage  
 

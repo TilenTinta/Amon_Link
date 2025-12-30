@@ -82,7 +82,7 @@ typedef struct{
     uint16_t    pct_rx_cnt;             // Received packets counter
     uint16_t    pct_fail_cnt;           // Counter for failed packets (calculated based on packet number - if next packet num. is not +1 -> pct_fail_cnt++)
 
-} DEVICE;
+} s_device;
 
 
 typedef struct {
@@ -99,7 +99,7 @@ typedef struct {
 
     uint8_t     bufferDMA_RF_UART[64];  // Unused?
 
-} BUFFERS;
+} s_buffers;
 
 
 typedef struct {
