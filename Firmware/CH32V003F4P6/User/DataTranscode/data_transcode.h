@@ -49,21 +49,29 @@
 #define SIG_SOF                 0xAA    // Start-Of-Frame
 
 // BOOTLOADER - Commands/Responses (1 byte)
-#define CMD_INFO                0x01                // e.g. bootloader version [CMD_READ]
-#define CMD_WRITE               0x03                // Write a chunk: [addr(4B) + data...]
-#define CMD_ERASE               0x02                // Erase application area (0x08001000 .. end)
-#define CMD_VERIFY              0x04                // Optional: verify CRC of whole app
-#define CMD_JUMP_APP            0x05                // Jump to application
-#define CMD_END_OF_FW           0x06                // End of firmware update, jump to application
-#define CMD_ACK                 0x80                // Response - Replies with info
-#define CMD_ERR                 0x81                // Response - Error reply with error code           
+#define CMD_INFO                0x01    // e.g. bootloader version [CMD_READ]
+#define CMD_WRITE               0x03    // Write a chunk: [addr(4B) + data...]
+#define CMD_ERASE               0x02    // Erase application area (0x08001000 .. end)
+#define CMD_VERIFY              0x04    // Optional: verify CRC of whole app
+#define CMD_JUMP_APP            0x05    // Jump to application
+#define CMD_END_OF_FW           0x06    // End of firmware update, jump to application
+#define CMD_ACK                 0x80    // Response - Replies with info
+#define CMD_ERR                 0x81    // Response - Error reply with error code           
 
-// BOOTLOADER-  Codes/payload (1 byte)
-#define CODE_BAD_CRC            0x01                // calculated CRC and received CRC doesnt match
-#define CODE_BOOT_VER           0x02                // Return bootloader version
-#define CODE_SW_CRC             0x02                // Return current CRC of main firmware
-#define CODE_EXIT_BOOT          0x03                // Exiting bootloader, jumping to application
-#define CODE_DATA_WRITEN        0x10                // Succesfuly writen data packet
+// BOOTLOADER - Codes/payload (1 byte)
+#define CODE_BAD_CRC            0x01    // calculated CRC and received CRC doesnt match
+#define CODE_BOOT_VER           0x02    // Return bootloader version
+#define CODE_SW_CRC             0x02    // Return current CRC of main firmware
+#define CODE_EXIT_BOOT          0x03    // Exiting bootloader, jumping to application
+#define CODE_DATA_WRITEN        0x10    // Succesfuly writen data packet
+
+// TRANSCODE RETURN
+#define TRANSCODE_OK               0x00    // No error / no response
+#define TRANSCODE_CRC_ERR          0x01    // CRC error
+#define TRANSCODE_VER_ERR          0x02    // Packet version error
+#define TRANSCODE_DEST_ERR         0x03    // Destination address error
+#define TRANSCODE_BROADCAST        0x04    // Broadcast command
+#define TRANSCODE_BOOT_PKT         0x0A    // Bootloader packet received
 
 // Address / IDs (1 byte)
 #define ID_PC                   0x01    // Address: PC

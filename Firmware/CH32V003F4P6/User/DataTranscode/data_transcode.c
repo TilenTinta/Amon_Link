@@ -6,7 +6,7 @@
  * Description        : Decoding logic for received and transmited data
 *****************************************************************/
 
-#include "dataDecoder.h"
+#include "data_transcode.h"
 
 /* Structs */
 s_uart_packet uart_packet;      // UART packet - application format
@@ -16,7 +16,6 @@ s_boot_packet boot_packet;      // UART packet - bootloader format
 /* Local function */
 void UART_packet_parse(s_uart_packet *data, s_boot_packet *boot, uint8_t *raw_data);
 void UART_packetDataReset(void);
-static void UART_boot_packetDataReset(void);
 //uint16_t crc16_cal(const uint8_t *data, uint16_t length);
 
 
@@ -25,6 +24,8 @@ static void UART_boot_packetDataReset(void);
  /*********************************************************************
  * @fcn     UART_packet_parse
  *
+ * @param *data: pointer containing uart data structure
+ * @param *boot: pointer containing bootloader data structure
  * @param *raw_data: pointer to raw data received over uart
  *
  * @brief   Spliting packet in to information parts
@@ -116,29 +117,6 @@ void UART_packetDataReset(void)
 
 
 /*********************************************************************
- * @fn      UART_boot_packetDataReset
- *
- * @brief   Clear data in UART struct for bootloader packet
- *
- * @return  none
- */
-void UART_boot_packetDataReset(void)
-{
-    // Clear data struct
-    // packet.sof = 0;
-    boot_packet.plen = 0;
-    boot_packet.addr = 0;
-    boot_packet.cmd = 0;
-    // for (int i = 0; i < sizeof(boot_packet.payload); i++)
-    // {
-    //     boot_packet.payload[i] = 0;
-    // }
-    boot_packet.crc16 = 0;
-}
-
-
-
-/*********************************************************************
  * @fcn     crc16_cal
  *
  * @param *data: pointer to data over which you want to calculate crc
@@ -182,17 +160,15 @@ uint16_t crc16_cal(const uint8_t *data, uint16_t length)
 /*********************************************************************
  * @fcn     UART_decode
  *
+ * @param *raw_uart_data: pointer to raw data received over uart
+ * @param *raw_rf_data: pointer to struct of rf data
+ * @param *rf_tx_flag: pointer to flag for new rf data avalable to transmit
+ *
  * @brief   Initialises the GPIOs
  *
- * @return  error code
- *          Code value:
- *              - 0: no error
- *              - 1: crc error
- *              - 2: version error
- *              - 3: Destination address error
- *              - 10: bootloader packet receiverd
+ * @return  error code - watch defines
  */
-uint8_t UART_decode(uint8_t* raw_uart_data, uint8_t* raw_rf_data, uint8_t* rf_tx_flag)
+uint8_t UART_decode(uint8_t *raw_uart_data, uint8_t *raw_rf_data, uint8_t *rf_tx_flag)
 {
     // Parse received buffer
     UART_packetDataReset();
@@ -202,29 +178,29 @@ uint8_t UART_decode(uint8_t* raw_uart_data, uint8_t* raw_rf_data, uint8_t* rf_tx
     if (boot_packet.plen != 0)
     {
         // Bootloader format
-        if (crc16_cal(&raw_uart_data[1], boot_packet.plen - 1) != boot_packet.crc16) return 1;
-        if (boot_packet.addr == ID_LINK_BOOT) return 10;
+        if (crc16_cal(&raw_uart_data[1], boot_packet.plen - 1) != boot_packet.crc16) return TRANSCODE_CRC_ERR;
+        if (boot_packet.addr == ID_LINK_BOOT) return TRANSCODE_BOOT_PKT;
     }
     else 
     {
         // UART format
-        if (crc16_cal(&raw_uart_data[1], uart_packet.len - 1) != uart_packet.CRC) return 1;
+        if (crc16_cal(&raw_uart_data[1], uart_packet.len - 1) != uart_packet.CRC) return TRANSCODE_CRC_ERR;
     }
 
     // Check version
-    if (uart_packet.version != PROTOCOL_VER) return 2;
+    if (uart_packet.version != PROTOCOL_VER) return TRANSCODE_VER_ERR;
 
     // Check destination address
     switch (uart_packet.dist_id) 
     {
         // Destination device: PC - error
         case ID_PC:
-            return 3;
+            return TRANSCODE_DEST_ERR;
             break;
 
         // Destination device: link bootloader - handled before
         case ID_LINK_BOOT:
-            return 3;
+            return TRANSCODE_DEST_ERR;
             break;
 
         // Destination device: link main application
@@ -253,7 +229,7 @@ uint8_t UART_decode(uint8_t* raw_uart_data, uint8_t* raw_rf_data, uint8_t* rf_tx
 
         // Destination device: broadcast - triger connecting/search...
         case ID_BROADCAST:
-
+            return TRANSCODE_BROADCAST;
             break;
 
         default:
@@ -266,6 +242,23 @@ uint8_t UART_decode(uint8_t* raw_uart_data, uint8_t* raw_rf_data, uint8_t* rf_tx
 }
 
 
+
+/*********************************************************************
+ * @fcn     UART_encode
+ *
+ * @param *raw_uart_data: pointer to raw data received over uart
+ * @param *raw_rf_data: pointer to struct of rf data
+ * @param *rf_tx_flag: pointer to flag for new rf data avalable to transmit
+ *
+ * @brief   Initialises the GPIOs
+ *
+ * @return  error code - watch defines
+ */
+uint8_t UART_encode(uint8_t *raw_uart_data, uint8_t *raw_rf_data, uint8_t *rf_tx_flag)
+{
+
+    return 0;
+}
 
 
 

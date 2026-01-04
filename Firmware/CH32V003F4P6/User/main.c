@@ -21,7 +21,6 @@ void TIM2_IRQHandler(void) __attribute__((interrupt("WCH-Interrupt-fast")));
 
 /*###########################################################################################################################################################*/
 /* Functions */
-
 void USART1_Init(void);
 void SPI1_Init(void);
 void LinkPinout_Init(void);
@@ -45,7 +44,6 @@ void flash_save_metadata(s_meta_data *data);
 s_device device;                                            // Device variables struct
 s_buffers buffers;                                          // Device buffers
 s_meta_data metadata;                                       // Metadata used for bootloader
-//UART_PACKET uart_packet;                                  // UART packet parts
 s_nRF24L01 radio1;                                          // Radio variables 1
 s_nRF24L01 radio2;                                          // Radio variables 2
 SPI_HandleTypeDef hspi1;                                    // SPI handle
@@ -107,152 +105,163 @@ int main(void)
             // TODO: Decode
             uint8_t ret = UART_decode(buffers.buffer_UART, buffers.buffer_RF, &buffers.flag_new_rf_tx_data);
             UART_buffer_clear();
-            if (ret == 10) system_reset_trigger();      // Bootloader reboot detection
+
+            // Based on some return values do something...
+            switch (ret) 
+            {
+                case TRANSCODE_BOOT_PKT:
+                    system_reset_trigger();      // Bootloader reboot detection
+                    break;
+                
+                case TRANSCODE_BROADCAST:
+                    device.state = STATE_CONN_START;
+                    break;
+            }
         }
 
         /* MAIN STATE MACHINE */
         switch(device.state)
         {
 
-        // State: Initialize all devices on the PCB
-        case STATE_INIT:
+            // State: Initialize all devices on the PCB
+            case STATE_INIT:
 
-            // Short pause for devices to fully power on
-            Delay_Ms(1000); 
-          
-            // Base UART data
-            char startDevInfo[] = "----- AMON Link -----\r\n";
-            UartSendBuffer((uint8_t*)startDevInfo, strlen(startDevInfo)); 
-
-            char idLabel[] = "Device ID: ";
-            UartSendBuffer((uint8_t*)idLabel, strlen(idLabel));
-            UartSendBuffer((uint8_t*)&device.device_id, sizeof(device.device_id));
-
-            char newline[] = "\r\n";
-            UartSendBuffer((uint8_t*)newline, strlen(newline));
-
-            // Radios initialization and setup
-            radio1.op_modes = NRF_MODE_PWR_DOWN;
-            radio2.op_modes = NRF_MODE_PWR_DOWN;
-            NRF24_pin_config(&radio1, SPI1, GPIOC, NRF_CS1, GPIOC, NRF_CE1);        // Map pins for radio 1
-            NRF24_pin_config(&radio2, SPI1, GPIOD, NRF_CS2, GPIOC, NRF_CE2);        // Map pins for radio 2
-
-            uint8_t status = 0;
-            if (NRF24_ReadStatus(&radio1, &status) == 0) 
-            {
-                if (status != 0x0E) radio1.radioErr = 1;
-            }
-
-            if (NRF24_ReadStatus(&radio2, &status) == 0) 
-            {
-                if (status != 0x0E) radio2.radioErr = 1;
-            }
-
-
-
-
-            // End of initialization
-            GPIO_WriteBit(GPIOC, LED_RED, Bit_RESET);
-            GPIO_WriteBit(GPIOD, LED_BLUE, Bit_RESET);
-
-            if (radio1.radioErr == 1 || radio2.radioErr == 1)
-            {
-                device.state = STATE_FAIL;          // Trigger init fail
-            } 
-            else
-            {
-                device.state = STATE_CONN_START;    // OK... continue
-            }
-                                             
-            break;
-
-
-
-        // State: Start pairing routine to connect device with a drone
-        case STATE_CONN_START:
-
-            // TODO: pairing routine
-
-
-            // If pairing is successfull UNCOMMENT
-            if (device.conn_status == CONN_STATUS_OK) 
-            {
-                GPIO_WriteBit(GPIOD, LED_BLUE, Bit_SET);
-                device.state = STATE_CONN_OK;
-            }
+                // Short pause for devices to fully power on
+                Delay_Ms(1000); 
             
-            // If pairing is NOT successfull -> IRQ timeout trigger 
+                // Base UART data
+                char startDevInfo[] = "----- AMON Link -----\r\n";
+                UartSendBuffer((uint8_t*)startDevInfo, strlen(startDevInfo)); 
 
-            break;
+                char idLabel[] = "Device ID: ";
+                UartSendBuffer((uint8_t*)idLabel, strlen(idLabel));
+                UartSendBuffer((uint8_t*)&device.device_id, sizeof(device.device_id));
+
+                char newline[] = "\r\n";
+                UartSendBuffer((uint8_t*)newline, strlen(newline));
+
+                // Radios initialization and setup
+                radio1.op_modes = NRF_MODE_PWR_DOWN;
+                radio2.op_modes = NRF_MODE_PWR_DOWN;
+                NRF24_pin_config(&radio1, SPI1, GPIOC, NRF_CS1, GPIOC, NRF_CE1);        // Map pins for radio 1
+                NRF24_pin_config(&radio2, SPI1, GPIOD, NRF_CS2, GPIOC, NRF_CE2);        // Map pins for radio 2
+
+                uint8_t status = 0;
+                if (NRF24_ReadStatus(&radio1, &status) == 0) 
+                {
+                    if (status != 0x0E) radio1.radioErr = 1;
+                }
+
+                if (NRF24_ReadStatus(&radio2, &status) == 0) 
+                {
+                    if (status != 0x0E) radio2.radioErr = 1;
+                }
 
 
 
-        // State: Device and drone are connected, data can be send/received
-        case STATE_CONN_OK:
 
-            // Select what type of communication will be used (Drone to PC)
-            switch (device.conn_type) 
-            {
+                // End of initialization
+                GPIO_WriteBit(GPIOC, LED_RED, Bit_RESET);
+                GPIO_WriteBit(GPIOD, LED_BLUE, Bit_RESET);
+
+                if (radio1.radioErr == 1 || radio2.radioErr == 1)
+                {
+                    device.state = STATE_FAIL;          // Trigger init fail
+                } 
+                else
+                {
+                    device.state = STATE_CONN_START;    // OK... continue
+                }
+                                                
+                break;
+
+
+
+            // State: Start pairing routine to connect device with a drone
+            case STATE_CONN_START:
+
+                // TODO: pairing routine
+
+
+                // If pairing is successfull
+                if (device.conn_status == CONN_STATUS_OK) 
+                {
+                    GPIO_WriteBit(GPIOD, LED_BLUE, Bit_SET);
+                    device.state = STATE_CONN_OK;
+                }
                 
-                // Clasic data transmition - IRQ, parameters to/from drone
-                case STATE_DATA_TRANSMIT:
-                    // TODO: Decode
-                
+                // If pairing is NOT successfull -> IRQ timeout trigger 
 
                 break;
 
-                // High speed data transmition - UDP style
-                case STATE_DATA_STREAM:
-                    // TODO: Optimize for dma (disable all timer interrupts, SPI optimization)
-                    //Start_DMA_USART_TX(sizeof(buffers.bufferDMA_RF_UART));
-                    //UartSendBuffer((uint8_t*)&device.device_id, sizeof(device.device_id));
+
+
+            // State: Device and drone are connected, data can be send/received
+            case STATE_CONN_OK:
+
+                // Select what type of communication will be used (Drone to PC)
+                switch (device.conn_type) 
+                {
+                    
+                    // Clasic data transmition - IRQ, parameters to/from drone
+                    case STATE_DATA_TRANSMIT:
+                        // TODO: Decode
                     
 
-                break;
+                    break;
 
-                // Undefined - go in error
-                default:
-                    device.state = STATE_CONN_FAIL;
-                break;
-            }
+                    // High speed data transmition - UDP style
+                    case STATE_DATA_STREAM:
+                        // TODO: Optimize for dma (disable all timer interrupts, SPI optimization)
+                        //Start_DMA_USART_TX(sizeof(buffers.bufferDMA_RF_UART));
+                        //UartSendBuffer((uint8_t*)&device.device_id, sizeof(device.device_id));
+                        
 
-            break;
+                    break;
 
-
-
-        // State: Pairing routine failed, reconnection must be triggered
-        case STATE_CONN_FAIL:
-            {
-                // Report failed connection
-                char statusLabel[] = "Connection FAILED!\r\n";
-                UartSendBuffer((uint8_t*)statusLabel, strlen(statusLabel));
-                GPIO_WriteBit(GPIOC, LED_RED, Bit_SET);                     // Indicate error
-                device.state = STATE_IDLE;                                  // Go in idle mode and wait on user response
+                    // Undefined - go in error
+                    default:
+                        device.state = STATE_CONN_FAIL;
+                    break;
+                }
 
                 break;
-            }
-            
 
 
 
-        // State: Idle mode where device just waits on user response
-        case STATE_IDLE:
-            // DO NOTHING... Wait on user (remote or physical)
+            // State: Pairing routine failed, reconnection must be triggered
+            case STATE_CONN_FAIL:
+                {
+                    // Report failed connection
+                    char statusLabel[] = "Connection FAILED!\r\n";
+                    UartSendBuffer((uint8_t*)statusLabel, strlen(statusLabel));
+                    GPIO_WriteBit(GPIOC, LED_RED, Bit_SET);                     // Indicate error
+                    device.state = STATE_IDLE;                                  // Go in idle mode and wait on user response
+
+                    break;
+                }
+                
+
+
+
+            // State: Idle mode where device just waits on user response
+            case STATE_IDLE:
+                // DO NOTHING... Wait on user (remote or physical)
+                break;
+
+
+
+            // State: Fail state if device / radion fail to initialize
+            case STATE_FAIL:
+                // DO NOTHING... Fast red LED blinks
+                break;
+
+
+
+            // State: Critical error in software
+            default:
+                // Problem... - sw error
             break;
-
-
-
-        // State: Fail state if device / radion fail to initialize
-        case STATE_FAIL:
-            // DO NOTHING... Fast red LED blinks
-            break;
-
-
-
-        // State: Critical error in software
-        default:
-            // Problem... - sw error
-        break;
         }
     }
 }
