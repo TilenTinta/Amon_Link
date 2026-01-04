@@ -81,6 +81,11 @@ int main(void)
         device.device_id = DBGMCU_GetCHIPID();              // Get unic device ID
         flash_read_boot_flag(&metadata);                    // Read boot flag value
         flash_read_crc32(&metadata);                        // Read current firmware CRC32
+        if (metadata.flags == 1)                            // Bootloop protection
+        {
+            metadata.flags = 0;
+            flash_save_metadata(&metadata);                 
+        } 
         device.version = SW_VER;                            // Version of software
         device.state = STATE_INIT;                          // Start device state
         device.conn_status = CONN_STATUS_NOK;               // Connection status
@@ -100,8 +105,9 @@ int main(void)
         if (buffers.flag_USB_RX_end == 1) 
         {
             // TODO: Decode
-            UART_decode(buffers.buffer_UART, buffers.buffer_RF, &buffers.flag_new_rf_tx_data);
+            uint8_t ret = UART_decode(buffers.buffer_UART, buffers.buffer_RF, &buffers.flag_new_rf_tx_data);
             UART_buffer_clear();
+            if (ret == 10) system_reset_trigger();      // Bootloader reboot detection
         }
 
         /* MAIN STATE MACHINE */
@@ -130,8 +136,6 @@ int main(void)
             radio2.op_modes = NRF_MODE_PWR_DOWN;
             NRF24_pin_config(&radio1, SPI1, GPIOC, NRF_CS1, GPIOC, NRF_CE1);        // Map pins for radio 1
             NRF24_pin_config(&radio2, SPI1, GPIOD, NRF_CS2, GPIOC, NRF_CE2);        // Map pins for radio 2
-
-            //system_reset_trigger(); // test
 
             uint8_t status = 0;
             if (NRF24_ReadStatus(&radio1, &status) == 0) 
@@ -233,18 +237,14 @@ int main(void)
 
         // State: Idle mode where device just waits on user response
         case STATE_IDLE:
-            
             // DO NOTHING... Wait on user (remote or physical)
-            
             break;
 
 
 
         // State: Fail state if device / radion fail to initialize
         case STATE_FAIL:
-            
             // DO NOTHING... Fast red LED blinks
-
             break;
 
 
@@ -670,16 +670,16 @@ void USART1_IRQHandler(void)
         cntBuffer_UART++;
 
         // Detect start of frame and set flags
-        if (buffers.flag_new_uart_rx_data == 1 && len_new_rx_data == 0)         // Flag for new packet, but no lenght of packet
-        {
-            len_new_rx_data = data;                                             // Save packet lenght
-            buffers.flag_new_uart_rx_data = 0;                                  // Clear flag for new data
-        }
-        else if (data == SIG_SOF && len_new_rx_data == 0 && len_new_rx_data == 0)  // No flag for new packet and SOA packet
+        if (data == SIG_SOF && len_new_rx_data == 0 && len_new_rx_data == 0)    // No flag for new packet and SOA packet
         {
             buffers.flag_new_uart_rx_data = 1;                                  // Indicate new data received
             buffers.flag_USB_RX_end = 0;                                        // Clear end of packet flag
             len_new_rx_data = 0;                                                // Clear packet counter
+        }
+        else if (buffers.flag_new_uart_rx_data == 1 && len_new_rx_data == 0)    // Flag for new packet, but no lenght of packet yet
+        {
+            len_new_rx_data = data;                                             // Save packet lenght
+            buffers.flag_new_uart_rx_data = 0;                                  // Clear flag for new data
         }
         else if (cntBuffer_UART >= (len_new_rx_data + 2))                       // Detect end of complete packet
         {
@@ -882,6 +882,25 @@ void flash_save_metadata(s_meta_data *data)
  */
 void system_reset_trigger(void)
 {
+    // Send a response 
+    buffers.buffer_UART[0] = SIG_SOF;
+    buffers.buffer_UART[1] = 11;
+    buffers.buffer_UART[2] = ID_PC;
+    buffers.buffer_UART[3] = CMD_ACK;
+    buffers.buffer_UART[4] = CODE_BOOT_VER;
+    buffers.buffer_UART[5] = BOOT_VER;
+    buffers.buffer_UART[6] = CODE_SW_CRC;
+    buffers.buffer_UART[7] = (uint8_t)(metadata.fw_crc32 >> 24);
+    buffers.buffer_UART[8] = (uint8_t)(metadata.fw_crc32 >> 16);
+    buffers.buffer_UART[9] = (uint8_t)(metadata.fw_crc32 >> 8);
+    buffers.buffer_UART[10] = (uint8_t)(metadata.fw_crc32);
+    uint16_t crc_temp = crc16_cal(&buffers.buffer_UART[1], 10);
+    buffers.buffer_UART[11] = (uint8_t)(crc_temp);
+    buffers.buffer_UART[12] = (uint8_t)(crc_temp >> 8);
+
+    // Send
+    UartSendBuffer(buffers.buffer_UART, sizeof(buffers.buffer_UART));
+
     __disable_irq();
 
     metadata.flags = 1; // stay in bootloader

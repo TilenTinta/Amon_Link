@@ -41,11 +41,29 @@
 /*###########################################################################################################################################################*/
 
 // Driver defines
-#define PROTOCOL_VER              0x01    // Version of current driver
+#define PROTOCOL_VER            0x01    // Version of current driver
+#define BOOT_VER                0x01    // Version of software - botloader
 #define HEADER_SHIFT            0x08    // Number of bytes before payload - used in code
 
 // Signaling (1 byte)
 #define SIG_SOF                 0xAA    // Start-Of-Frame
+
+// BOOTLOADER - Commands/Responses (1 byte)
+#define CMD_INFO                0x01                // e.g. bootloader version [CMD_READ]
+#define CMD_WRITE               0x03                // Write a chunk: [addr(4B) + data...]
+#define CMD_ERASE               0x02                // Erase application area (0x08001000 .. end)
+#define CMD_VERIFY              0x04                // Optional: verify CRC of whole app
+#define CMD_JUMP_APP            0x05                // Jump to application
+#define CMD_END_OF_FW           0x06                // End of firmware update, jump to application
+#define CMD_ACK                 0x80                // Response - Replies with info
+#define CMD_ERR                 0x81                // Response - Error reply with error code           
+
+// BOOTLOADER-  Codes/payload (1 byte)
+#define CODE_BAD_CRC            0x01                // calculated CRC and received CRC doesnt match
+#define CODE_BOOT_VER           0x02                // Return bootloader version
+#define CODE_SW_CRC             0x02                // Return current CRC of main firmware
+#define CODE_EXIT_BOOT          0x03                // Exiting bootloader, jumping to application
+#define CODE_DATA_WRITEN        0x10                // Succesfuly writen data packet
 
 // Address / IDs (1 byte)
 #define ID_PC                   0x01    // Address: PC
@@ -96,6 +114,7 @@
 /* Structs */
 
 typedef struct {
+
     uint8_t     sof;                    // Start of frame
     uint8_t     len;                    // Lenght of the packet
     uint8_t     version;                // Version (only for logic)
@@ -106,6 +125,7 @@ typedef struct {
     uint8_t     plen;                   // Payload lenght
     uint16_t    CRC;                    // CRC calculated over len-payload
     uint8_t     payload[];              // Payload data [must be last to allow scaling]
+
 } s_uart_packet;
 
 
@@ -123,7 +143,8 @@ typedef struct {
 
 /*###########################################################################################################################################################*/
 /* Functions */
-void UART_decode(uint8_t* raw_uart_data, uint8_t* raw_rf_data, uint8_t* rf_tx_flag);
+uint8_t UART_decode(uint8_t* raw_uart_data, uint8_t* raw_rf_data, uint8_t* rf_tx_flag);
+uint16_t crc16_cal(const uint8_t *data, uint16_t length);
 
 
 

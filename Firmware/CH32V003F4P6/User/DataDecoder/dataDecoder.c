@@ -14,7 +14,12 @@ s_boot_packet boot_packet;      // UART packet - bootloader format
 
 
 /* Local function */
-static void UART_packetDataReset(void);
+void UART_packet_parse(s_uart_packet *data, s_boot_packet *boot, uint8_t *raw_data);
+void UART_packetDataReset(void);
+static void UART_boot_packetDataReset(void);
+//uint16_t crc16_cal(const uint8_t *data, uint16_t length);
+
+
 
 
  /*********************************************************************
@@ -27,10 +32,39 @@ static void UART_packetDataReset(void);
  * @return  none
  */
 
-void UART_packet_parse(s_uart_packet *data, uint8_t *raw_data)
+void UART_packet_parse(s_uart_packet *data, s_boot_packet *boot, uint8_t *raw_data)
 {
     data->sof       = *raw_data;
     data->len       = *(raw_data + 1);
+
+    // Check if packet is bootloader format -> if it is decode different
+    // Example: 
+        //      Packet structure: SOF=0xaa, PLEN=0x4, ADDR=0x10, CMD=0x1, PAYLOAD=0xXX, CRC16=0x1234
+        //      CRC16: calculated over entire packet excluding SOF and CRC16 itself
+        //      PLEN: does not count itself in its value
+        //      Full packet bytes: ['0xaa', '0x4', '0x10', '0x1', '0xfc', '0x1']
+    if (data->len == 4) 
+    {   
+        boot->sof = data->sof;
+        boot->plen = data->len;               // Without CRC16 (and SOF)
+        boot->addr = *(raw_data + 2);
+        boot->cmd = *(raw_data + 3);
+
+        // if (data->plen > 4)                // 4 bytes does not have payload (only: ADDR, CMD, CRC16_1, CRC16_2)
+        // {
+        //     for (int i = 0; i < data->plen - 4; i++)
+        //     {
+        //         data->payload[i] = *(raw_data + HEADER_SHIFT + i);
+        //     }
+        // }
+
+        uint16_t crc1_tmp = (uint16_t)*(raw_data + data->len);
+        uint16_t crc2_tmp = (uint16_t)*(raw_data + data->len + 1) << 8;
+        boot->crc16 = crc1_tmp | crc2_tmp;
+
+        return;
+    }
+
     data->version   = *(raw_data + 2);
     data->flags     = *(raw_data + 3);
     data->src_id    = *(raw_data + 4);
@@ -50,47 +84,6 @@ void UART_packet_parse(s_uart_packet *data, uint8_t *raw_data)
     uint16_t crc2_tmp = (uint16_t)*(raw_data + data->len + 1) << 8;
     data->CRC = crc1_tmp | crc2_tmp;
 
-}
-
-
-
- /*********************************************************************
- * @fcn     UART_boot_packet_parse
- *
- * @param *raw_data: pointer to raw data packet that you want to decode in fields
- * @param *data: pointer to packet struct
- *
- * @brief   Spliting packet in to information parts
- *
- * @return  none
- */
-
-void UART_boot_packet_parse(s_boot_packet *data, uint8_t *raw_data)
-{
-    // Example: 
-    //      Packet structure: SOF=0xaa, PLEN=0x4, ADDR=0x10, CMD=0x1, PAYLOAD=0xXX, CRC16=0x1234
-    //      CRC16: calculated over entire packet excluding SOF and CRC16 itself
-    //      PLEN: does not count itself in its value
-    //      Full packet bytes: ['0xaa', '0x4', '0x10', '0x1', '0xfc', '0x1']
-
-    data->sof = *raw_data;
-    data->plen = *(raw_data + 1);      // Without CRC16 (and SOF)
-    data->addr = *(raw_data + 2);
-    data->cmd = *(raw_data + 3);
-
-    // if (data->plen > 4)                // 4 bytes does not have payload (only: ADDR, CMD, CRC16_1, CRC16_2)
-    // {
-    //     for (int i = 0; i < data->plen - 4; i++)
-    //     {
-    //         data->payload[i] = *(raw_data + HEADER_SHIFT + i);
-    //     }
-    // }
-
-    uint16_t crc1_tmp = (uint16_t)*(raw_data + data->plen);
-    uint16_t crc2_tmp = (uint16_t)*(raw_data + data->plen + 1) << 8;
-    data->crc16 = crc1_tmp | crc2_tmp;
-
-    //packet.crc16 = (uint16_t)*(raw_data + (packet.plen)) | ((uint16_t)*(raw_data + (packet.plen - 1)) << 8);
 }
 
 
@@ -121,42 +114,120 @@ void UART_packetDataReset(void)
 }
 
 
+
+/*********************************************************************
+ * @fn      UART_boot_packetDataReset
+ *
+ * @brief   Clear data in UART struct for bootloader packet
+ *
+ * @return  none
+ */
+void UART_boot_packetDataReset(void)
+{
+    // Clear data struct
+    // packet.sof = 0;
+    boot_packet.plen = 0;
+    boot_packet.addr = 0;
+    boot_packet.cmd = 0;
+    // for (int i = 0; i < sizeof(boot_packet.payload); i++)
+    // {
+    //     boot_packet.payload[i] = 0;
+    // }
+    boot_packet.crc16 = 0;
+}
+
+
+
+/*********************************************************************
+ * @fcn     crc16_cal
+ *
+ * @param *data: pointer to data over which you want to calculate crc
+ * @param lenght: lenght of data you provide to function
+ *
+ * @brief   Calculates 2 byte crc over data
+ *          Modbus RTU-style CRC-16 algorithm
+ *          x^16 + x^15 + x^2 + 1
+ *          https://ctlsys.com/support/how_to_compute_the_modbus_rtu_message_crc/
+ *
+ * @return  crc value
+ */
+uint16_t crc16_cal(const uint8_t *data, uint16_t length)
+{
+    uint16_t crc = 0xFFFF;                  // don't start with zero, this would make some leading zeros in data invisible
+
+    for (uint16_t i = 0; i < length; i++)
+    {
+        crc ^= *(data+i);                   // XOR byte into least sig. byte of crc
+
+        for (uint8_t j = 8; j != 0; j--)    // Loop over each bit
+        {
+            if ((crc & 0x0001) != 0)        // If the LSB is set
+            {
+                crc >>= 1;                  // Shift right and XOR 0xA001
+                crc ^= 0xA001;
+            }       
+            else                            // Else LSB is not set
+            {
+                crc >>= 1;                  // Just shift right
+            }                            
+        }
+    }
+    
+    // Note, this number has low and high bytes swapped, so use it accordingly
+    return crc;
+}
+
+
+
 /*********************************************************************
  * @fcn     UART_decode
  *
  * @brief   Initialises the GPIOs
  *
- * @return  none
+ * @return  error code
+ *          Code value:
+ *              - 0: no error
+ *              - 1: crc error
+ *              - 2: version error
+ *              - 3: Destination address error
+ *              - 10: bootloader packet receiverd
  */
-
-void UART_decode(uint8_t* raw_uart_data, uint8_t* raw_rf_data, uint8_t* rf_tx_flag)
+uint8_t UART_decode(uint8_t* raw_uart_data, uint8_t* raw_rf_data, uint8_t* rf_tx_flag)
 {
     // Parse received buffer
     UART_packetDataReset();
-    UART_packet_parse(&uart_packet, &raw_uart_data[0]);
-
-    // Check version
-    if (uart_packet.version != PROTOCOL_VER) return;
+    UART_packet_parse(&uart_packet, &boot_packet, &raw_uart_data[0]);
 
     // CRC check
-    uint16_t cal_CRC = 0;
+    if (boot_packet.plen != 0)
+    {
+        // Bootloader format
+        if (crc16_cal(&raw_uart_data[1], boot_packet.plen - 1) != boot_packet.crc16) return 1;
+        if (boot_packet.addr == ID_LINK_BOOT) return 10;
+    }
+    else 
+    {
+        // UART format
+        if (crc16_cal(&raw_uart_data[1], uart_packet.len - 1) != uart_packet.CRC) return 1;
+    }
 
-    if (cal_CRC != uart_packet.CRC) return;
-
+    // Check version
+    if (uart_packet.version != PROTOCOL_VER) return 2;
 
     // Check destination address
     switch (uart_packet.dist_id) 
     {
         // Destination device: PC - error
         case ID_PC:
-            return;
+            return 3;
             break;
 
+        // Destination device: link bootloader - handled before
         case ID_LINK_BOOT:
-            return;
+            return 3;
             break;
 
-        // Destination device: link
+        // Destination device: link main application
         case ID_LINK_SW:
             //...
             break;
@@ -190,16 +261,12 @@ void UART_decode(uint8_t* raw_uart_data, uint8_t* raw_rf_data, uint8_t* rf_tx_fl
             break;
     
     }
+
+    return 0;
 }
 
 
-/*********************************************************************
- * @fcn     CRC_calculate
- *
- * @brief   calculate CRC of received data over UART
- *
- * @return  none
- */
+
 
 
 

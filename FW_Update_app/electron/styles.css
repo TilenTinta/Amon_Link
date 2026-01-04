@@ -183,6 +183,19 @@ button.ghost {
   border-color: rgba(255, 255, 255, 0.08);
 }
 
+#jumpAppBtn {
+  background: rgba(160, 170, 185, 0.14);
+  border-color: rgba(160, 170, 185, 0.4);
+  color: #c7cfdb;
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
 .badge {
   padding: 6px 12px;
   border-radius: 999px;

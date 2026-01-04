@@ -37,8 +37,8 @@
 #define REUSE_TX_PL             0xE3    // 1110 0011 - Reuse last transmited payload
 #define ACTIVATE                0x50    // 0101 0000 - toggle: R_RX_PL_WID, W_ACK_PAYLOAD, W_TX_PAYLOAD_NOACK
 #define R_RX_PL_WID             0x60    // 0110 0000 - Read RX payload width
-#define W_ACK_PAYLOAD           0xA8    // 1010 1PPP - Write payload for transmit - last tree bits can be 000 to 101
-#define W_TX_PAYLOAD_NOACK      0xB0    // 1011 000  -  Disable AUTOACK - datasheet only three bits???
+#define W_ACK_PAYLOAD           0xA8    // 1010 1PPP - Write ACK payload for transmit - last tree bits can be 000 to 101
+#define W_TX_PAYLOAD_NOACK      0xB0    // 1011 000  - Disable AUTOACK - datasheet only three bits???
 #define NOP                     0xFF    // 1111 1111 - No operation (*to read status register)
 
 // Register map [Chapter 9, Table 24]

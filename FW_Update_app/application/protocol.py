@@ -12,6 +12,7 @@ ID_LINK_SW = 0x11
 ID_PC = 0x01
 CMD_GET_INFO = 0x01
 CMD_WRITE = 0x03
+CMD_JUMP_APP = 0x05
 CMD_END_OF_FW = 0x06
 CMD_ACK = 0x80
 CMD_ERR = 0x81
@@ -91,6 +92,7 @@ __all__ = [
     "ID_PC",
     "CMD_GET_INFO",
     "CMD_WRITE",
+    "CMD_JUMP_APP",
     "CMD_END_OF_FW",
     "CMD_ACK",
     "CMD_ERR",

@@ -9,6 +9,7 @@ const lastMessage = document.getElementById("lastMessage");
 const fileInput = document.getElementById("fileInput");
 const uploadBtn = document.getElementById("uploadBtn");
 const startUploadBtn = document.getElementById("startUploadBtn");
+const jumpAppBtn = document.getElementById("jumpAppBtn");
 const progressFill = document.getElementById("progressFill");
 const fileLabel = document.getElementById("fileLabel");
 const logList = document.getElementById("logList");
@@ -27,6 +28,7 @@ const actionButtons = [
   connectBtn,
   uploadBtn,
   startUploadBtn,
+  jumpAppBtn,
 ];
 
 function addLog(message) {
@@ -236,6 +238,19 @@ async function startUpload() {
   setStatus(state);
 }
 
+async function jumpApp() {
+  if (jumpAppBtn.disabled) {
+    return;
+  }
+  try {
+    const state = await fetchJson("/jump_app", { method: "POST" });
+    addLog("Sent JUMP_APP command.");
+    setStatus(state);
+  } catch (error) {
+    addLog(`Jump App failed: ${error.message}`);
+  }
+}
+
 refreshPortsBtn.addEventListener("click", refreshPorts);
 connectBtn.addEventListener("click", () => {
   if (connectBtn.textContent === "Disconnect") {
@@ -246,6 +261,7 @@ connectBtn.addEventListener("click", () => {
 });
 uploadBtn.addEventListener("click", uploadFile);
 startUploadBtn.addEventListener("click", startUpload);
+jumpAppBtn.addEventListener("click", jumpApp);
 clearLogBtn.addEventListener("click", () => {
   logList.innerHTML = "";
   addLog("Console cleared.");

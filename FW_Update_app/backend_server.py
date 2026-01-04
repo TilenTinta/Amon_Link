@@ -14,6 +14,7 @@ from application.backend import backend
 from application.protocol import (
     CMD_ACK,
     CMD_END_OF_FW,
+    CMD_JUMP_APP,
     CMD_WRITE,
     CODE_BOOT_VER,
     CODE_DATA_WRITEN,
@@ -132,6 +133,30 @@ def _crc32_hex(data: bytes) -> str:
     return f"0x{zlib.crc32(data) & 0xFFFFFFFF:08X}"
 
 
+def _normalize_crc32(value: str | None) -> str | None:
+    if not value:
+        return None
+    text = value.strip()
+    if text.lower().startswith("0x"):
+        text = text[2:]
+    if not text:
+        return None
+    lowered = text.lower()
+    if any(char not in "0123456789abcdef" for char in lowered):
+        return None
+    return lowered.zfill(8).upper()
+
+
+def _update_crc_match() -> None:
+    with state_lock:
+        upload_crc32 = _normalize_crc32(state.upload_crc32)
+        device_crc32 = _normalize_crc32(state.device_crc32)
+        if upload_crc32 and device_crc32:
+            state.crc_match = "match" if upload_crc32 == device_crc32 else "mismatch"
+        else:
+            state.crc_match = ""
+
+
 def _hex_to_bin(data: bytes, start_addr: int | None = None) -> bytes:
     """Parse Intel HEX into raw binary bytes, optionally trimming below start_addr."""
     base_addr = 0
@@ -219,14 +244,13 @@ def _format_response(resp: bytes | tuple[str, str]) -> str:
                     crc32=device_crc32,
                     crc_match="",
                 )
-                if state.upload_crc32:
-                    matches = state.upload_crc32.upper() == device_crc32
-                    if matches:
-                        message += " (matches upload, no update needed)"
-                        _set_device_state(crc_match="match")
-                    else:
-                        message += " (differs from upload, update needed)"
-                        _set_device_state(crc_match="mismatch")
+                _update_crc_match()
+                with state_lock:
+                    crc_match = state.crc_match
+                if crc_match == "match":
+                    message += " (matches upload, no update needed)"
+                elif crc_match == "mismatch":
+                    message += " (differs from upload, update needed)"
                 return message
 
         payload_hex = payload.hex() or "0x00"
@@ -328,14 +352,7 @@ def upload(file: UploadFile = File(...)) -> dict[str, Any]:
         is_uploading=False,
         crc32=crc32,
     )
-    with state_lock:
-        device_crc32 = state.device_crc32
-        upload_crc32 = state.upload_crc32
-    if device_crc32 and upload_crc32:
-        if device_crc32.upper() == upload_crc32.upper():
-            _set_device_state(crc_match="match")
-        else:
-            _set_device_state(crc_match="mismatch")
+    _update_crc_match()
     _set_last_message(f"Loaded {file_name} ({len(data)} bytes)")
     return _state_snapshot()
 
@@ -433,6 +450,16 @@ def start_upload(request: UploadStartRequest | None = None) -> dict[str, Any]:
         daemon=True,
     )
     thread.start()
+    return _state_snapshot()
+
+
+@app.post("/jump_app")
+def jump_app() -> dict[str, Any]:
+    if not backend.is_connected():
+        raise HTTPException(status_code=400, detail="Connect to a device first.")
+    packet = build_packet(ID_LINK_BOOT, CMD_JUMP_APP)
+    backend.send_bytes(packet)
+    _set_last_message(f"Sent JUMP_APP {packet.hex()}")
     return _state_snapshot()
 
 
