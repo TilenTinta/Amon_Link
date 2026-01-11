@@ -14486,7 +14486,7 @@
 				(justify right)
 			)
 		)
-		(property "Value" "2.2pF"
+		(property "Value" "2.2nF"
 			(at 182.372 49.022 0)
 			(effects
 				(font
@@ -20363,7 +20363,7 @@
 				(justify right)
 			)
 		)
-		(property "Value" "2.2pF"
+		(property "Value" "2.2nF"
 			(at 182.372 115.062 0)
 			(effects
 				(font

@@ -75,11 +75,13 @@ typedef struct{
     uint8_t     version;                // Version of FW (based on protocol)
     uint8_t     init_done;              // Block the initialisation process
     uint8_t     state;                  // Main state machine variable
+    uint8_t     err_code;               // Error code used for error report
+
     uint8_t     conn_status;            // Flag that indicates state of connection with drone
     uint8_t     conn_type;              // Type of communication - transmit/stream
-    uint8_t     err_code;               // Error code used for error report
     uint16_t    pct_tx_cnt;             // Send packets counter
     uint16_t    pct_rx_cnt;             // Received packets counter
+    uint8_t     flag_lost_connection;   // Flag that indicates connection lost (after n of retransmitions)
     uint16_t    pct_fail_cnt;           // Counter for failed packets (calculated based on packet number - if next packet num. is not +1 -> pct_fail_cnt++)
 
 } s_device;

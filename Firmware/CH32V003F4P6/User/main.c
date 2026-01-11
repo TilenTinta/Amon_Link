@@ -48,6 +48,41 @@ s_nRF24L01 radio1;                                          // Radio variables 1
 s_nRF24L01 radio2;                                          // Radio variables 2
 SPI_HandleTypeDef hspi1;                                    // SPI handle
 
+// Radio 1 configurations (application specific)
+static const s_nrf_config radio_tx_cfg = {
+    .channel = 40,
+    .addr_width = AW_5BYTE,
+    .auto_ack = 1,
+    .dynamic_payload = 1,
+    .retries = 3,
+    .retry_delay = ARD_500us,
+    .datarate = NRF_DATARATE_1MBPS,
+    .power = NRF_POWER_0DBM,  
+};
+
+static const s_pipe_addr radio_tx_addr = {
+    .tx_addr = { 0xE7, 0xE7, 0xE7, 0xE7, 0xE7 }
+};
+
+// Radio 1 configurations (application specific)
+static const s_nrf_config radio_rx_cfg = {
+    .channel = 42,
+    .addr_width = AW_5BYTE,
+    .auto_ack = 1,
+    .dynamic_payload = 1,
+    .retries = 0,
+    .retry_delay = 0,
+    .datarate = NRF_DATARATE_1MBPS,
+    .power = NRF_POWER_MINUS_6DBM,
+};
+
+static const s_pipe_addr radio_rx_addr = {
+    .pipe0_rx_addr = { 0xE7, 0xE7, 0xE7, 0xE7, 0xE7 }
+};
+
+
+
+/*############################# ---MAIN--- ######################################################################################################################*/
 
 int main(void)
 {
@@ -89,8 +124,10 @@ int main(void)
         device.conn_status = CONN_STATUS_NOK;               // Connection status
         device.conn_type = STATE_DATA_TRANSMIT;             // Communication type - clasic
 
-        radio1.op_modes = NRF_MODE_PWR_ON_RST;
-        radio2.op_modes = NRF_MODE_PWR_ON_RST;
+        radio1.op_modes = NRF_MODE_PWR_ON_RST;              // set default radio state
+        radio2.op_modes = NRF_MODE_PWR_ON_RST;              // set default radio state
+        device.flag_lost_connection = 0;
+
         device.init_done = 1;                               // Block init 
 
         __enable_irq();
@@ -99,31 +136,66 @@ int main(void)
 
     while(1)
     {
-        // If USB packet is received - decode
+        /* USB DECODING HANDLING */
         if (buffers.flag_USB_RX_end == 1) 
         {
             // TODO: Decode
             uint8_t ret = UART_decode(buffers.buffer_UART, buffers.buffer_RF, &buffers.flag_new_rf_tx_data);
             UART_buffer_clear();
 
-            // Based on some return values do something...
+            // Based on return values trigger events
             switch (ret) 
             {
                 case TRANSCODE_BOOT_PKT:
-                    system_reset_trigger();      // Bootloader reboot detection
+                    system_reset_trigger();             // Bootloader reboot detection
                     break;
                 
                 case TRANSCODE_BROADCAST:
-                    device.state = STATE_CONN_START;
+                    device.state = STATE_CONN_START;    // Trigger new reconections
+                    break;
+                
+                case TRANSCODE_VER_ERR:                 // Wrong version of packet
+                    break;
+                
+                case TRANSCODE_DEST_ERR:                // Wrong destination address
+                    break;
+
+                case TRANSCODE_CRC_ERR:                 // Corupted frame / CRC
+                    break;
+                    
+                case TRANSCODE_OK:                      // Packet OK
                     break;
             }
         }
+
+
+        /* RADIO IRQ HANDLING */
+        if (radio1.irq_flag == 1)
+        {   
+            // TX
+            NRF24_HandleIRQ(&radio1);
+            radio1.buffers.pipe_data = radio1.irq_on_pipe;
+            radio1.irq_flag = 0;
+            radio1.irq_on_pipe = 0xFF;
+        }
+
+        if (radio2.irq_flag == 1)
+        {
+            // RX
+            
+            NRF24_HandleIRQ(&radio2);
+            radio2.buffers.pipe_data = radio2.irq_on_pipe;
+            radio2.irq_flag = 0;
+            radio2.irq_on_pipe = 0xFF;
+        }
+        
+
 
         /* MAIN STATE MACHINE */
         switch(device.state)
         {
 
-            // State: Initialize all devices on the PCB
+            // STATE: Initialize all devices on the PCB
             case STATE_INIT:
 
                 // Short pause for devices to fully power on
@@ -141,29 +213,56 @@ int main(void)
                 UartSendBuffer((uint8_t*)newline, strlen(newline));
 
                 // Radios initialization and setup
-                radio1.op_modes = NRF_MODE_PWR_DOWN;
-                radio2.op_modes = NRF_MODE_PWR_DOWN;
                 NRF24_pin_config(&radio1, SPI1, GPIOC, NRF_CS1, GPIOC, NRF_CE1);        // Map pins for radio 1
                 NRF24_pin_config(&radio2, SPI1, GPIOD, NRF_CS2, GPIOC, NRF_CE2);        // Map pins for radio 2
 
                 uint8_t status = 0;
                 if (NRF24_ReadStatus(&radio1, &status) == 0) 
                 {
-                    if (status != 0x0E) radio1.radioErr = 1;
+                    if (status != 0x0E) 
+                    {
+                        radio1.radioErr = NRF_ERR_BOOT;
+                    }
+                    else
+                    {
+                        radio1.radioErr = NRF_ERR_NONE;
+                        radio1.op_modes = NRF_MODE_PWR_DOWN;
+                    }
                 }
 
                 if (NRF24_ReadStatus(&radio2, &status) == 0) 
                 {
-                    if (status != 0x0E) radio2.radioErr = 1;
+                    if (status != 0x0E) 
+                    {
+                        radio2.radioErr = NRF_ERR_BOOT;
+                    }
+                    else
+                    {
+                        radio2.radioErr = NRF_ERR_NONE;
+                        radio2.op_modes = NRF_MODE_PWR_DOWN;
+                    }
                 }
 
+                // Set radio configurations and init
+                radio1.role   = NRF_ROLE_PTX;
+                radio1.config = &radio_tx_cfg;
+                radio1.address = &radio_tx_addr;
+                radio1.id     = NRF_ID_1;
+                NRF24_init(&radio1);
+                NRF24_SetTXAddress(&radio1, radio1.address->tx_addr);
 
-
+                radio2.role   = NRF_ROLE_PRX;
+                radio2.config = &radio_rx_cfg;
+                radio2.address = &radio_rx_addr;
+                radio2.id     = NRF_ID_2;
+                NRF24_init(&radio2);
+                NRF24_SetRXAddress(&radio2, 0, radio2.address->pipe0_rx_addr);
 
                 // End of initialization
                 GPIO_WriteBit(GPIOC, LED_RED, Bit_RESET);
                 GPIO_WriteBit(GPIOD, LED_BLUE, Bit_RESET);
 
+                // Check radio initialization
                 if (radio1.radioErr == 1 || radio2.radioErr == 1)
                 {
                     device.state = STATE_FAIL;          // Trigger init fail
@@ -177,27 +276,40 @@ int main(void)
 
 
 
-            // State: Start pairing routine to connect device with a drone
+            // STATE: Start pairing routine to connect device with a drone
             case STATE_CONN_START:
 
                 // TODO: pairing routine
 
 
-                // If pairing is successfull
+                // Pairing is successfull
                 if (device.conn_status == CONN_STATUS_OK) 
                 {
                     GPIO_WriteBit(GPIOD, LED_BLUE, Bit_SET);
                     device.state = STATE_CONN_OK;
                 }
                 
-                // If pairing is NOT successfull -> IRQ timeout trigger 
+                // Pairing is NOT successfull 
+                //  -> IRQ timeout trigger (device.conn_status == CONN_STATUS_NOK)
 
                 break;
 
 
 
-            // State: Device and drone are connected, data can be send/received
+            // STATE: Device and drone are connected, data can be send/received
             case STATE_CONN_OK:
+
+                // ### Experimental - only option to get signal quality
+                /*
+                {
+                    uint8_t arc = NRF24_GetLinkQuality(&radio1);
+
+                    if (arc <= 1)       radio1.strength = LINK_EXCELLENT;
+                    else if (arc <= 4)  radio1.strength = LINK_GOOD;
+                    else if (arc <= 8)  radio1.strength = LINK_WEAK;
+                    else                radio1.strength = LINK_BAD;
+                }
+                */
 
                 // Select what type of communication will be used (Drone to PC)
                 switch (device.conn_type) 
@@ -205,31 +317,53 @@ int main(void)
                     
                     // Clasic data transmition - IRQ, parameters to/from drone
                     case STATE_DATA_TRANSMIT:
-                        // TODO: Decode
-                    
 
+                        // ### Transmit data
+                        if (radio1.buffers.flag_tx_done) 
+                        {
+                            // success
+                            device.pct_tx_cnt++;
+                            radio1.buffers.flag_tx_done = 0;
+                        }
+
+                        if (radio1.buffers.flag_max_rxs_reached) 
+                        {
+                            device.pct_fail_cnt++;
+                            radio1.buffers.flag_max_rxs_reached = 0;
+
+                            if (device.pct_fail_cnt >= 5)
+                            {
+                                device.flag_lost_connection = 1;
+                                device.state = STATE_CONN_FAIL;
+                            } 
+                        }
+
+                        // ### Receive data
+                        if (radio2.buffers.flag_new_rx)
+                        {
+                            NRF24_ReadRXPayload(&radio2);
+                        }
+                        
                     break;
-
+                    
                     // High speed data transmition - UDP style
                     case STATE_DATA_STREAM:
                         // TODO: Optimize for dma (disable all timer interrupts, SPI optimization)
                         //Start_DMA_USART_TX(sizeof(buffers.bufferDMA_RF_UART));
                         //UartSendBuffer((uint8_t*)&device.device_id, sizeof(device.device_id));
                         
-
                     break;
 
                     // Undefined - go in error
                     default:
                         device.state = STATE_CONN_FAIL;
                     break;
+                
+                break;
                 }
 
-                break;
 
-
-
-            // State: Pairing routine failed, reconnection must be triggered
+            // STATE: Pairing routine failed, reconnection must be triggered
             case STATE_CONN_FAIL:
                 {
                     // Report failed connection
@@ -244,21 +378,21 @@ int main(void)
 
 
 
-            // State: Idle mode where device just waits on user response
+            // STATE: Idle mode where device just waits on user response
             case STATE_IDLE:
                 // DO NOTHING... Wait on user (remote or physical)
                 break;
 
 
 
-            // State: Fail state if device / radion fail to initialize
+            // STATE: Fail state if device / radion fail to initialize
             case STATE_FAIL:
                 // DO NOTHING... Fast red LED blinks
                 break;
 
 
 
-            // State: Critical error in software
+            // STATE: Critical error in software
             default:
                 // Problem... - sw error
             break;
@@ -321,13 +455,13 @@ void LinkPinout_Init(void)
     // Set IRQ1 (Radio interrupt pin 1)
     GPIO_InitStructure.GPIO_Pin = NRF_IRQ1;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_30MHz;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPD;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
     GPIO_Init(GPIOD, &GPIO_InitStructure);
 
     GPIO_EXTILineConfig(GPIO_PortSourceGPIOD, GPIO_PinSource3);
     EXTI_InitStructure.EXTI_Line = EXTI_Line3;
     EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
-    EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising;
+    EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;
     EXTI_InitStructure.EXTI_LineCmd = ENABLE;
     EXTI_Init(&EXTI_InitStructure);
 
@@ -340,13 +474,13 @@ void LinkPinout_Init(void)
     // Set IRQ2 (Radio interrupt pin 2)
     GPIO_InitStructure.GPIO_Pin = NRF_IRQ2;
     GPIO_InitStructure.GPIO_Speed = GPIO_Speed_30MHz;
-    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPD;
+    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
     GPIO_Init(GPIOC, &GPIO_InitStructure);
 
     GPIO_EXTILineConfig(GPIO_PortSourceGPIOC, GPIO_PinSource1);
     EXTI_InitStructure.EXTI_Line = EXTI_Line1;
     EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
-    EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising;
+    EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;
     EXTI_InitStructure.EXTI_LineCmd = ENABLE;
     EXTI_Init(&EXTI_InitStructure);
 
@@ -747,14 +881,14 @@ void EXTI7_0_IRQHandler(void)
     // Radio 1 IRQ pin
     if(EXTI_GetITStatus(EXTI_Line3) != RESET)
     {
-        if (device.conn_status == CONN_STATUS_OK) radio1.flag_IRQ = 1;
+        radio1.irq_flag = 1;
         EXTI_ClearITPendingBit(EXTI_Line3);     // Clear Flag
     }
 
     // Radio 2 IRQ pin
     if(EXTI_GetITStatus(EXTI_Line1) != RESET)
     {
-        if (device.conn_status == CONN_STATUS_OK) radio2.flag_IRQ = 1;
+        radio2.irq_flag = 1;
         EXTI_ClearITPendingBit(EXTI_Line1);     // Clear Flag
     }
 }

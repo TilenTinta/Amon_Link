@@ -206,6 +206,7 @@ uint8_t UART_decode(uint8_t *raw_uart_data, uint8_t *raw_rf_data, uint8_t *rf_tx
         // Destination device: link main application
         case ID_LINK_SW:
             //...
+            return TRANSCODE_OK;
             break;
 
         // Destination device: drone
@@ -225,6 +226,7 @@ uint8_t UART_decode(uint8_t *raw_uart_data, uint8_t *raw_rf_data, uint8_t *rf_tx
                 *(raw_rf_data + i) = uart_packet.payload[i];
             }
 
+            return TRANSCODE_OK;
             break;
 
         // Destination device: broadcast - triger connecting/search...
