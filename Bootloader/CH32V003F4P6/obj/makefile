@@ -55,7 +55,7 @@ main-build: CH32V003F4P6.elf secondary-outputs
 
 # Tool invocations
 CH32V003F4P6.elf: $(OBJS) $(USER_OBJS_ESCAPE)
-	@	riscv-none-embed-gcc -march=rv32ecxw -mabi=ilp32e -msmall-data-limit=0 -msave-restore -fmax-errors=20 -O1 -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -fno-common -Wunused -Wuninitialized -g -T "c:/DATA/Projects/Amon_Link/Bootloader/CH32V003F4P6/Ld/Link.ld" -nostartfiles -Xlinker --gc-sections -Xlinker --print-memory-usage -Wl,-Map,"CH32V003F4P6.map" --specs=nano.specs --specs=nosys.specs -o "CH32V003F4P6.elf" $(OBJS) $(LIBS) -lprintf
+	@	riscv-none-embed-gcc -march=rv32ecxw -mabi=ilp32e -msmall-data-limit=0 -msave-restore -fmax-errors=20 -O1 -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -fno-common -Wunused -Wuninitialized -g -T "c:/DATA/Projects/Amon_Link/Bootloader/CH32V003F4P6/Ld/Link.ld" -nostartfiles -Xlinker --gc-sections -Wl,-Map,"CH32V003F4P6.map" --specs=nano.specs --specs=nosys.specs -o "CH32V003F4P6.elf" $(OBJS) $(LIBS) -lprintf
 CH32V003F4P6.hex: CH32V003F4P6.elf
 	@	riscv-none-embed-objcopy -O ihex "CH32V003F4P6.elf" "CH32V003F4P6.hex"
 CH32V003F4P6.lst: CH32V003F4P6.elf

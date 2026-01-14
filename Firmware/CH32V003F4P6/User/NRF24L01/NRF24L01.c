@@ -445,13 +445,12 @@ void NRF24_init(s_nRF24L01 *dev)
  * @fn      NRF24_Send
  *
  * @param   *dev: device struct
- * @param   lenght: number of bytes to be send
  *
  * @brief   Send data
  *
  * @return  1: error, 0: OK
  */
-uint8_t NRF24_Send(s_nRF24L01 *dev, uint8_t length)
+uint8_t NRF24_Send(s_nRF24L01 *dev)
 {
     uint8_t cmd;
 
@@ -463,7 +462,7 @@ uint8_t NRF24_Send(s_nRF24L01 *dev, uint8_t length)
     }
 
     // Check payload lenght
-    if (length == 0 || length > 32) 
+    if (dev->buffers.tx_lenght == 0 || dev->buffers.tx_lenght > 32) 
     {
         return 1;
     }
@@ -484,7 +483,7 @@ uint8_t NRF24_Send(s_nRF24L01 *dev, uint8_t length)
     nrf_cs_low(dev);
     nrf_spi_txrx(dev, W_TX_PAYLOAD);
 
-    for (uint8_t i = 0; i < length; i++) 
+    for (uint8_t i = 0; i < dev->buffers.tx_lenght; i++) 
     {
         nrf_spi_txrx(dev, dev->buffers.TX_FIFO[i]);
     }

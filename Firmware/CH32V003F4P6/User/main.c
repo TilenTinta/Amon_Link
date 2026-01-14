@@ -43,10 +43,12 @@ void flash_save_metadata(s_meta_data *data);
 /* Global define */
 s_device device;                                            // Device variables struct
 s_buffers buffers;                                          // Device buffers
+s_packets data_packets;                                     // Packets struct
 s_meta_data metadata;                                       // Metadata used for bootloader
 s_nRF24L01 radio1;                                          // Radio variables 1
 s_nRF24L01 radio2;                                          // Radio variables 2
 SPI_HandleTypeDef hspi1;                                    // SPI handle
+
 
 // Radio 1 configurations (application specific)
 static const s_nrf_config radio_tx_cfg = {
@@ -66,7 +68,7 @@ static const s_pipe_addr radio_tx_addr = {
 
 // Radio 1 configurations (application specific)
 static const s_nrf_config radio_rx_cfg = {
-    .channel = 42,
+    .channel = 40,
     .addr_width = AW_5BYTE,
     .auto_ack = 1,
     .dynamic_payload = 1,
@@ -127,6 +129,8 @@ int main(void)
         radio1.op_modes = NRF_MODE_PWR_ON_RST;              // set default radio state
         radio2.op_modes = NRF_MODE_PWR_ON_RST;              // set default radio state
         device.flag_lost_connection = 0;
+        radio1.irq_on_pipe = 0xFF;
+        radio2.irq_on_pipe = 0xFF;
 
         device.init_done = 1;                               // Block init 
 
@@ -136,12 +140,15 @@ int main(void)
 
     while(1)
     {
-        /* USB DECODING HANDLING */
-        if (buffers.flag_USB_RX_end == 1) 
+        /* USB TRANSCODING HANDLING */
+        if (buffers.flag_new_uart_rx_data == 1) 
         {
+            buffers.flag_new_uart_rx_data = 0;
+
             // TODO: Decode
-            uint8_t ret = UART_decode(buffers.buffer_UART, buffers.buffer_RF, &buffers.flag_new_rf_tx_data);
-            UART_buffer_clear();
+            uint8_t ret = UART_decode(buffers.buffer_UART, &data_packets, &buffers.flag_new_rf_tx_data);
+            //UART_buffer_clear();
+            memset(buffers.buffer_UART, 0, sizeof(buffers.buffer_UART));
 
             // Based on return values trigger events
             switch (ret) 
@@ -152,6 +159,38 @@ int main(void)
                 
                 case TRANSCODE_BROADCAST:
                     device.state = STATE_CONN_START;    // Trigger new reconections
+                    break;
+                
+                case TRANSCODE_VER_ERR:                 // Wrong version of packet
+                    break;
+                
+                case TRANSCODE_DEST_ERR:                // Wrong destination address
+                    break;
+
+                case TRANSCODE_CRC_ERR:                 // Corupted frame / CRC
+                    break;
+                    
+                case TRANSCODE_OK:                      // Packet OK
+                    break;
+            }
+        }
+
+
+        /* RF TRANSCODING HANDLING */
+        if (buffers.flag_new_rf_rx_data == 1) 
+        {
+            buffers.flag_new_rf_rx_data = 0;
+
+            // TODO: Decode
+            uint8_t ret = RF_decode(radio2.buffers.RX_FIFO, &data_packets, &buffers.flag_new_uart_tx_data);
+
+            // Based on return values trigger events
+            switch (ret) 
+            {
+                case TRANSCODE_BOOT_PKT:                // Wrong destination address
+                    break;
+                
+                case TRANSCODE_BROADCAST:               // Unavailable command
                     break;
                 
                 case TRANSCODE_VER_ERR:                 // Wrong version of packet
@@ -182,7 +221,6 @@ int main(void)
         if (radio2.irq_flag == 1)
         {
             // RX
-            
             NRF24_HandleIRQ(&radio2);
             radio2.buffers.pipe_data = radio2.irq_on_pipe;
             radio2.irq_flag = 0;
@@ -244,17 +282,17 @@ int main(void)
                 }
 
                 // Set radio configurations and init
-                radio1.role   = NRF_ROLE_PTX;
-                radio1.config = &radio_tx_cfg;
-                radio1.address = &radio_tx_addr;
-                radio1.id     = NRF_ID_1;
+                radio1.role     = NRF_ROLE_PTX;
+                radio1.config   = &radio_tx_cfg;
+                radio1.address  = &radio_tx_addr;
+                radio1.id       = NRF_ID_1;
                 NRF24_init(&radio1);
                 NRF24_SetTXAddress(&radio1, radio1.address->tx_addr);
 
-                radio2.role   = NRF_ROLE_PRX;
-                radio2.config = &radio_rx_cfg;
-                radio2.address = &radio_rx_addr;
-                radio2.id     = NRF_ID_2;
+                radio2.role     = NRF_ROLE_PRX;
+                radio2.config   = &radio_rx_cfg;
+                radio2.address  = &radio_rx_addr;
+                radio2.id       = NRF_ID_2;
                 NRF24_init(&radio2);
                 NRF24_SetRXAddress(&radio2, 0, radio2.address->pipe0_rx_addr);
 
@@ -280,11 +318,12 @@ int main(void)
             case STATE_CONN_START:
 
                 // TODO: pairing routine
-
+                device.conn_status = CONN_STATUS_OK;   // TEST
 
                 // Pairing is successfull
                 if (device.conn_status == CONN_STATUS_OK) 
                 {
+                    device.flag_lost_connection = 0;
                     GPIO_WriteBit(GPIOD, LED_BLUE, Bit_SET);
                     device.state = STATE_CONN_OK;
                 }
@@ -317,8 +356,28 @@ int main(void)
                     
                     // Clasic data transmition - IRQ, parameters to/from drone
                     case STATE_DATA_TRANSMIT:
+                        {
+                            // ### New data available to send -> send
+                            // # RF #
+                            if (buffers.flag_new_rf_tx_data)
+                            {
+                                RF_encode(&data_packets, radio1.buffers.TX_FIFO, &radio1.buffers.tx_lenght);
+                                NRF24_Send(&radio1);
+                                buffers.flag_new_rf_tx_data = 0;
+                            }
 
-                        // ### Transmit data
+                            // # UART #
+                            if (buffers.flag_new_uart_tx_data)
+                            {
+                                UART_encode(&data_packets, buffers.buffer_UART);
+                                UartSendBuffer(buffers.buffer_UART, sizeof(buffers.buffer_UART));
+                                buffers.flag_new_uart_tx_data = 0;
+                            }
+
+                        }
+
+
+                        // ### Transmited data
                         if (radio1.buffers.flag_tx_done) 
                         {
                             // success
@@ -342,6 +401,7 @@ int main(void)
                         if (radio2.buffers.flag_new_rx)
                         {
                             NRF24_ReadRXPayload(&radio2);
+                            buffers.flag_new_uart_tx_data = 1;
                         }
                         
                     break;
@@ -358,9 +418,9 @@ int main(void)
                     default:
                         device.state = STATE_CONN_FAIL;
                     break;
-                
-                break;
                 }
+                break;
+                
 
 
             // STATE: Pairing routine failed, reconnection must be triggered
@@ -785,6 +845,8 @@ void UartSendBuffer(uint8_t* buffer, uint16_t length)
         }
         USART_SendData(USART1, buffer[cnt]);
     }
+
+    //memcpy(buffers.buffer_UART, 0, sizeof(buffers.buffer_UART));
 }
 
 
@@ -813,20 +875,20 @@ void USART1_IRQHandler(void)
         cntBuffer_UART++;
 
         // Detect start of frame and set flags
-        if (data == SIG_SOF && len_new_rx_data == 0 && len_new_rx_data == 0)    // No flag for new packet and SOA packet
+        if (data == SIG_SOF && len_new_rx_data == 0)    // No flag for new packet and SOA packet
         {
-            buffers.flag_new_uart_rx_data = 1;                                  // Indicate new data received
-            buffers.flag_USB_RX_end = 0;                                        // Clear end of packet flag
+            buffers.flag_USB_RX_new = 1;                                        // Indicate new data received
+            buffers.flag_new_uart_rx_data = 0;                                        // Clear end of packet flag
             len_new_rx_data = 0;                                                // Clear packet counter
         }
-        else if (buffers.flag_new_uart_rx_data == 1 && len_new_rx_data == 0)    // Flag for new packet, but no lenght of packet yet
+        else if (buffers.flag_USB_RX_new == 1 && len_new_rx_data == 0)          // Flag for new packet, but no lenght of packet yet
         {
             len_new_rx_data = data;                                             // Save packet lenght
-            buffers.flag_new_uart_rx_data = 0;                                  // Clear flag for new data
+            buffers.flag_USB_RX_new = 0;                                        // Clear flag for new data
         }
         else if (cntBuffer_UART >= (len_new_rx_data + 2))                       // Detect end of complete packet
         {
-            buffers.flag_USB_RX_end = 1;                                        // Indicate end of packet
+            buffers.flag_new_uart_rx_data = 1;                                  // Indicate end of packet
             cntBuffer_UART = 0;                                                 // Clear UART counter
         }
 

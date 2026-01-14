@@ -371,9 +371,10 @@ uint8_t NRF24_ReadRegister(s_nRF24L01 *dev, uint8_t reg, uint8_t *value, uint8_t
 uint8_t NRF24_WriteRegister(s_nRF24L01 *dev, uint8_t reg, uint8_t value, uint8_t *status_out);  // Write register
 uint8_t NRF24_ReadStatus(s_nRF24L01 *dev, uint8_t *status_out);                                 // Alive check
 
+// API functions
 void NRF24_HandleIRQ(s_nRF24L01 *dev);                                                          // Interrupt handler
 void NRF24_init(s_nRF24L01 *dev);                                                               // Device initialization functio
-uint8_t NRF24_Send(s_nRF24L01 *dev, uint8_t length);                                            // Send data over RF
+uint8_t NRF24_Send(s_nRF24L01 *dev);                                                            // Send data over RF
 uint8_t NRF24_ReadRXPayload(s_nRF24L01 *dev);                                                   // Read received data from device
 uint8_t NRF24_SetTXAddress(s_nRF24L01 *dev, const uint8_t *addr);                               // Set address of TX pipe
 uint8_t NRF24_SetRXAddress(s_nRF24L01 *dev, uint8_t pipe, const uint8_t *addr);                 // Set address of RX pipe

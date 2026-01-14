@@ -43,7 +43,8 @@
 // Driver defines
 #define PROTOCOL_VER            0x01    // Version of current driver
 #define BOOT_VER                0x01    // Version of software - botloader
-#define HEADER_SHIFT            0x08    // Number of bytes before payload - used in code
+#define HEADER_SHIFT_UART       0x08    // Number of bytes before payload - used in code
+#define HEADER_SHIFT_RF         0x06    // Number of bytes before payload - used in code
 
 // Signaling (1 byte)
 #define SIG_SOF                 0xAA    // Start-Of-Frame
@@ -66,12 +67,12 @@
 #define CODE_DATA_WRITEN        0x10    // Succesfuly writen data packet
 
 // TRANSCODE RETURN
-#define TRANSCODE_OK               0x00    // No error / no response
-#define TRANSCODE_CRC_ERR          0x01    // CRC error
-#define TRANSCODE_VER_ERR          0x02    // Packet version error
-#define TRANSCODE_DEST_ERR         0x03    // Destination address error
-#define TRANSCODE_BROADCAST        0x04    // Broadcast command
-#define TRANSCODE_BOOT_PKT         0x0A    // Bootloader packet received
+#define TRANSCODE_OK            0x00    // No error / no response
+#define TRANSCODE_CRC_ERR       0x01    // CRC error
+#define TRANSCODE_VER_ERR       0x02    // Packet version error
+#define TRANSCODE_DEST_ERR      0x03    // Destination address error
+#define TRANSCODE_BROADCAST     0x04    // Broadcast command
+#define TRANSCODE_BOOT_PKT      0x0A    // Bootloader packet received
 
 // Address / IDs (1 byte)
 #define ID_PC                   0x01    // Address: PC
@@ -128,11 +129,11 @@ typedef struct {
     uint8_t     version;                // Version (only for logic)
     uint8_t     flags;                  // Flags of packet
     uint8_t     src_id;                 // Source address
-    uint8_t     dist_id;                // Destination address
+    uint8_t     dest_id;                // Destination address
     uint8_t     opcode;                 // Code for the command
     uint8_t     plen;                   // Payload lenght
     uint16_t    CRC;                    // CRC calculated over len-payload
-    uint8_t     payload[];              // Payload data [must be last to allow scaling]
+    uint8_t     payload[64];            // Payload data
 
 } s_uart_packet;
 
@@ -149,9 +150,35 @@ typedef struct {
 } s_boot_packet;
 
 
+typedef struct {
+
+    uint8_t     version;                // Version (only for logic)
+    uint8_t     flags;                  // Flags of packet
+    uint8_t     src_id;                 // Source address
+    uint8_t     dest_id;                // Destination address
+    uint8_t     opcode;                 // Code for the command
+    uint8_t     plen;                   // Payload lenght
+    uint8_t     payload[26];            // Payload data [32-6]
+
+} s_rf_packet;
+
+
+typedef struct {
+
+    
+    s_boot_packet   boot_packet;
+    s_rf_packet     rf_packet;
+    s_uart_packet   uart_packet;
+
+} s_packets;
+
+
 /*###########################################################################################################################################################*/
 /* Functions */
-uint8_t UART_decode(uint8_t* raw_uart_data, uint8_t* raw_rf_data, uint8_t* rf_tx_flag);
+uint8_t UART_decode(uint8_t *raw_uart_data, s_packets* packets, uint8_t *rf_tx_flag);
+uint8_t RF_decode(uint8_t *raw_rf_data, s_packets *packets, uint8_t *uart_tx_flag);
+void UART_encode(s_packets *packets, uint8_t *raw_uart_data);
+void RF_encode(s_packets *packets, uint8_t *raw_rf_data, uint8_t *tx_lenght);
 uint16_t crc16_cal(const uint8_t *data, uint16_t length);
 
 

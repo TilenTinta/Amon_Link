@@ -74,11 +74,11 @@ typedef struct{
     uint32_t    device_id;              // MCU ID number (identifying the device)
     uint8_t     version;                // Version of FW (based on protocol)
     uint8_t     init_done;              // Block the initialisation process
-    uint8_t     state;                  // Main state machine variable
+    volatile uint8_t     state;         // Main state machine variable
     uint8_t     err_code;               // Error code used for error report
 
-    uint8_t     conn_status;            // Flag that indicates state of connection with drone
-    uint8_t     conn_type;              // Type of communication - transmit/stream
+    volatile uint8_t     conn_status;   // Flag that indicates state of connection with drone
+    volatile uint8_t     conn_type;     // Type of communication - transmit/stream
     uint16_t    pct_tx_cnt;             // Send packets counter
     uint16_t    pct_rx_cnt;             // Received packets counter
     uint8_t     flag_lost_connection;   // Flag that indicates connection lost (after n of retransmitions)
@@ -93,10 +93,9 @@ typedef struct {
     uint8_t     buffer_UART[64];        // Buffer for saving USB data
     uint8_t     flag_new_uart_rx_data;  // Flag indicating a new data has arrived (packet is not complete)
     uint8_t     flag_new_uart_tx_data;  // Flag indicating a new data is ready to send
-    uint8_t     flag_USB_RX_end;        // Flag for new complete USB command (PC -> link) - start decode
+    uint8_t     flag_USB_RX_new;        // Flag for new complete USB packet (PC -> link) - start decode
     
-    uint8_t     buffer_RF[64];          // Buffer for RF data
-    uint8_t     flag_new_rf_rx_data;    // Flag indicating a new data has arrived (packet is not complete)
+    uint8_t     flag_new_rf_rx_data;    // Flag indicating a new data has arrived
     uint8_t     flag_new_rf_tx_data;    // Flag indicating a new data is ready to send
 
     uint8_t     bufferDMA_RF_UART[64];  // Unused?
