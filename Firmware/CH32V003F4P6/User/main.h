@@ -28,9 +28,6 @@
 #define PAGE_SIZE           64          // Page size in bytes
 #define APP_METADATA_ADDR   APP_END_ADDRESS - PAGE_SIZE // Address in flash where FW data is stored (flags, CRC32) - 64 Bytes
 
-#define FLAG_REBOOT         0x00        // TODO: Flash address of reboot mode flag (bootloader/main sw)
-#define SW_HASH             0x00        // TODO: Hash of current sw
-
 #define RADIO_NO            2           // Number of radios (1 or 2)
 
 #define STATE_INIT          0           // State machine value: boot-up (blue light)

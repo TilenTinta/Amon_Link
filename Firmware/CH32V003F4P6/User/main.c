@@ -68,7 +68,7 @@ static const s_pipe_addr radio_tx_addr = {
 
 // Radio 1 configurations (application specific)
 static const s_nrf_config radio_rx_cfg = {
-    .channel = 40,
+    .channel = 42,
     .addr_width = AW_5BYTE,
     .auto_ack = 1,
     .dynamic_payload = 1,
@@ -147,7 +147,6 @@ int main(void)
 
             // TODO: Decode
             uint8_t ret = UART_decode(buffers.buffer_UART, &data_packets, &buffers.flag_new_rf_tx_data);
-            //UART_buffer_clear();
             memset(buffers.buffer_UART, 0, sizeof(buffers.buffer_UART));
 
             // Based on return values trigger events

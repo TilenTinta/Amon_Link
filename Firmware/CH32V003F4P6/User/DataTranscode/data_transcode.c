@@ -67,7 +67,7 @@ void packetDataReset(void)
 
 
  /*********************************************************************
- * @fcn     UART_packet_parse
+ * @fn     UART_packet_parse
  *
  * @param *data: pointer containing all packets data structure
  * @param *raw_data: pointer to raw data received over uart
@@ -134,7 +134,7 @@ void UART_packet_parse(s_packets *data, uint8_t *raw_data)
 
 
  /*********************************************************************
- * @fcn     RF_packet_parse
+ * @fn     RF_packet_parse
  *
  * @param *data: pointer containing all packets data structure
  * @param *raw_data: pointer to raw data received over uart
@@ -165,7 +165,7 @@ void RF_packet_parse(s_packets *data, uint8_t *raw_data)
 
 
 /*********************************************************************
- * @fcn     UART_decode
+ * @fn     UART_decode
  *
  * @param *raw_uart_data: pointer to raw data received over uart
  * @param *packets: pointer to struct of all packets data
@@ -253,7 +253,7 @@ uint8_t UART_decode(uint8_t *raw_uart_data, s_packets *packets, uint8_t *rf_tx_f
 
 
 /*********************************************************************
- * @fcn     RF_decode
+ * @fn     RF_decode
  *
  * @param *raw_rf_data: pointer to struct of rf data
  * @param *packets: pointer to struct of all packets data
@@ -331,7 +331,7 @@ uint8_t RF_decode(uint8_t *raw_rf_data, s_packets *packets,  uint8_t *uart_tx_fl
 
 
 /*********************************************************************
- * @fcn     UART_encode
+ * @fn     UART_encode
  *
  * @param *packets: pointer to struct of all packets data
  * @param *raw_uart_data: pointer to raw data received over uart
@@ -369,10 +369,10 @@ void UART_encode(s_packets *packets, uint8_t *raw_uart_data)
 
 
 /*********************************************************************
- * @fcn     RF_encode
+ * @fn     RF_encode
  *
- * @param *packets: pointer to struct of all packets data
- * @param *raw_rf_data: pointer to raw data received over uart
+ * @param *packets: pointer to struct of all data packets 
+ * @param *raw_rf_data: pointer to raw data you want to send
  *
  * @brief   Encode data to be send over RF
  *
@@ -400,7 +400,7 @@ void RF_encode(s_packets *packets, uint8_t *raw_rf_data, uint8_t *tx_lenght)
 
 
 /*********************************************************************
- * @fcn     crc16_cal
+ * @fn     crc16_cal
  *
  * @param *data: pointer to data over which you want to calculate crc
  * @param lenght: lenght of data you provide to function

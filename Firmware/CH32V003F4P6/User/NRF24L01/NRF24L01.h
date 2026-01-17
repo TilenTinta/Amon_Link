@@ -20,17 +20,17 @@
 /* Defines */
 
 /*  User must define pinouts based on its wiring.
-    Pins that are required for one radio are:
-        - MISO - SPI
-        - MOSI - SPI
-        - SCK - SPI
-        - CS - chip select - SPI
-        - CE - chip enable
-        - IRQ - interrupt pin (pulled low when interrupt happens)
-    SPI peripheral configuration:
-        - 0 - 8Mbps 4-wire SPI serial interface
-        - 8 bit command set
-*/
+ *   Pins that are required for one radio are:
+ *       - MISO - SPI
+ *       - MOSI - SPI
+ *       - SCK - SPI
+ *       - CS - chip select - SPI
+ *       - CE - chip enable
+ *       - IRQ - interrupt pin (pulled low when interrupt happens)
+ *   SPI peripheral configuration:
+ *       - 0 - 8Mbps 4-wire SPI serial interface
+ *       - 8 bit command set
+ */
 
 // Commands [Chapter 8.3, Table 16] (A = register map address)
 #define R_REGISTER              0x00    // 000A AAAA - Read register
@@ -291,7 +291,6 @@ typedef enum {
 
 // Device substruct for configuration - constant values that usualy not change when operating
 typedef struct {
-
     uint8_t             channel;        // Used channel
     uint8_t             addr_width;     // Lenght of address in bytes
     uint8_t             auto_ack;       // Enable auto acknowledgement
@@ -316,7 +315,6 @@ typedef struct {
 
 // Databuffers for transmiting and receiving data
 typedef struct {
-
     uint8_t             TX_FIFO[32];    // TX buffer
     uint8_t             tx_lenght;      // lenght of tx data in buffer 
     uint8_t             RX_FIFO[32];    // RX buffer
@@ -332,7 +330,6 @@ typedef struct {
 
 // Main devide struct (pinout, configurations, etc.)
 typedef struct {
-
     SPI_TypeDef         *SPIx;          // SPI instance
     GPIO_TypeDef        *CS_Port;       // CSN port
     uint16_t            CS_Pin;         // CSN pin

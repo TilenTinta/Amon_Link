@@ -123,7 +123,6 @@
 /* Structs */
 
 typedef struct {
-
     uint8_t     sof;                    // Start of frame
     uint8_t     len;                    // Lenght of the packet
     uint8_t     version;                // Version (only for logic)
@@ -139,7 +138,6 @@ typedef struct {
 
 
 typedef struct {
-
     uint8_t sof;                        // Start of frame
     uint8_t plen;                       // Packet lenght
     uint8_t addr;                       // Address of targeted device
@@ -151,7 +149,6 @@ typedef struct {
 
 
 typedef struct {
-
     uint8_t     version;                // Version (only for logic)
     uint8_t     flags;                  // Flags of packet
     uint8_t     src_id;                 // Source address
@@ -164,11 +161,22 @@ typedef struct {
 
 
 typedef struct {
+    uint8_t     version;                // Version (only for logic)
+    uint8_t     flags;                  // Flags of packet
+    uint8_t     src_id;                 // Source address
+    uint8_t     dest_id;                // Destination address
+    uint8_t     opcode;                 // Code for the command
+    uint8_t     plen;                   // Payload lenght
+    uint8_t     payload[26];            // Payload data [32-6]
 
-    
-    s_boot_packet   boot_packet;
-    s_rf_packet     rf_packet;
-    s_uart_packet   uart_packet;
+} s_rf_packet_drone;
+
+
+typedef struct {
+    s_boot_packet       boot_packet;
+    s_rf_packet         rf_packet;
+    s_rf_packet_drone 	rf_packet_drone;
+    s_uart_packet       uart_packet;
 
 } s_packets;
 

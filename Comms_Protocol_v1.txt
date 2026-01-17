@@ -47,7 +47,8 @@ Date: 2025-08-24
 	- bit1: ERR    (processing error; payload carries error code)
 	- bit2: STREAM (telemetry stream frame)
 	- bit3: FRAG   (fragmented payload; optional future use)
-	- bit4..7: reserved (0)
+	- bit4: DATA   (data payload)
+	- bit5..7: reserved (0)
 
 5) Opcodes (1 byte)
 	- 0x00: NOP / Reserved
