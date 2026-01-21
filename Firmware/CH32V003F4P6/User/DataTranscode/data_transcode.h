@@ -93,6 +93,7 @@
 #define OPT_NOP                 0x00    // NOP / Reserved
 #define OPT_PING                0x01    // PING (req) / PONG (reply with status TLVs)
 #define OPT_ERROR_REPORT	    0x02    // Device error report (payload: error code + info)
+#define OPT_ERROR_TX            0x03    // Error when transmiting packet
 #define OPT_PAIR_STATUS         0x10    // Status of pairing procedure
 #define OPT_PAIR_START          0x11    // Trigger pairing procedure
 #define OPT_LINK_GET_PARAMS     0x20    // Get parameters from link device

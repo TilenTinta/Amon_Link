@@ -56,10 +56,10 @@ static const s_nrf_config radio_tx_cfg = {
     .addr_width = AW_5BYTE,
     .auto_ack = 1,
     .dynamic_payload = 1,
-    .retries = 3,
-    .retry_delay = ARD_500us,
+    .retries = 8, // 10
+    .retry_delay = ARD_2000us, // ARD_1000us
     .datarate = NRF_DATARATE_1MBPS,
-    .power = NRF_POWER_0DBM,  
+    .power = NRF_POWER_0DBM,   
 };
 
 static const s_pipe_addr radio_tx_addr = {
@@ -68,7 +68,7 @@ static const s_pipe_addr radio_tx_addr = {
 
 // Radio 1 configurations (application specific)
 static const s_nrf_config radio_rx_cfg = {
-    .channel = 42,
+    .channel = 100, //42
     .addr_width = AW_5BYTE,
     .auto_ack = 1,
     .dynamic_payload = 1,
@@ -79,7 +79,7 @@ static const s_nrf_config radio_rx_cfg = {
 };
 
 static const s_pipe_addr radio_rx_addr = {
-    .pipe0_rx_addr = { 0xE7, 0xE7, 0xE7, 0xE7, 0xE7 }
+    .pipe0_rx_addr = { 0xE7, 0xE7, 0xE7, 0xE7, 0xE8 }
 };
 
 
@@ -295,6 +295,8 @@ int main(void)
                 NRF24_init(&radio2);
                 NRF24_SetRXAddress(&radio2, 0, radio2.address->pipe0_rx_addr);
 
+                //NRF24_ReadStatus(&radio1, &status); // Clear all irqs
+
                 // End of initialization
                 GPIO_WriteBit(GPIOC, LED_RED, Bit_RESET);
                 GPIO_WriteBit(GPIOD, LED_BLUE, Bit_RESET);
@@ -318,6 +320,20 @@ int main(void)
 
                 // TODO: pairing routine
                 device.conn_status = CONN_STATUS_OK;   // TEST
+
+                // Trigger packet sending by button press
+                if (device.flag_btn_rcon == 1)
+                {
+                    data_packets.rf_packet.version = SW_VER;
+                    data_packets.rf_packet.flags = FLAG_DATA;
+                    data_packets.rf_packet.src_id = ID_PC;
+                    data_packets.rf_packet.dest_id = ID_DRONE;
+                    data_packets.rf_packet.opcode = OPT_PAIR_START;
+                    data_packets.rf_packet.plen = 0;
+                    RF_encode(&data_packets, radio1.buffers.TX_FIFO, &radio1.buffers.tx_lenght);
+                    NRF24_Send(&radio1);
+                    device.flag_btn_rcon = 0;
+                }
 
                 // Pairing is successfull
                 if (device.conn_status == CONN_STATUS_OK) 
@@ -388,6 +404,11 @@ int main(void)
                         {
                             device.pct_fail_cnt++;
                             radio1.buffers.flag_max_rxs_reached = 0;
+
+                            // Report failed transmit - problem in PC client
+                            // report_err_tx(&data_packets);
+                            // UART_encode(&data_packets, buffers.buffer_UART);
+                            // UartSendBuffer(buffers.buffer_UART, sizeof(buffers.buffer_UART));
 
                             if (device.pct_fail_cnt >= 5)
                             {
@@ -933,6 +954,7 @@ void EXTI7_0_IRQHandler(void)
         if (device.state != STATE_CONN_START)
         {
             device.state = STATE_CONN_START;
+            device.flag_btn_rcon = 1;
             GPIO_WriteBit(GPIOC, LED_RED, Bit_RESET);
         }
 

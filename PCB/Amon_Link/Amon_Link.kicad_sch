@@ -14001,9 +14001,10 @@
 		(in_bom yes)
 		(on_board yes)
 		(dnp no)
+		(fields_autoplaced yes)
 		(uuid "46e293b4-b3a8-4bde-8415-306c3d5de250")
 		(property "Reference" "C17"
-			(at 124.968 42.418 0)
+			(at 124.46 41.9163 0)
 			(effects
 				(font
 					(size 1 1)
@@ -14012,7 +14013,7 @@
 			)
 		)
 		(property "Value" "1nF"
-			(at 124.968 43.942 0)
+			(at 124.46 44.4563 0)
 			(effects
 				(font
 					(size 1 1)

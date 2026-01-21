@@ -16,8 +16,6 @@ s_packets packets;
 static void UART_packet_parse(s_packets *data, uint8_t *raw_data);
 static void RF_packet_parse(s_packets *data, uint8_t *raw_data);
 static void packetDataReset(void);
-//uint16_t crc16_cal(const uint8_t *data, uint16_t length);
-
 
 
 /*********************************************************************
@@ -334,7 +332,7 @@ uint8_t RF_decode(uint8_t *raw_rf_data, s_packets *packets,  uint8_t *uart_tx_fl
  * @fn     UART_encode
  *
  * @param *packets: pointer to struct of all packets data
- * @param *raw_uart_data: pointer to raw data received over uart
+ * @param *raw_uart_data: pointer to uart data buffer 
  *
  * @brief   Encode data to be send over UART
  *

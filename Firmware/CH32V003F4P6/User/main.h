@@ -13,8 +13,9 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
-#include "NRF24L01/NRF24L01.h"          // Library for radios
-#include "DataTranscode/data_transcode.h"    // Encoders and decoder for data frafic
+#include "NRF24L01/NRF24L01.h"              // Library for radios
+#include "DataTranscode/data_transcode.h"   // Encoders and decoder for data frafic
+#include "device.h"                         // Helper functions for device
 
 
 /*###########################################################################################################################################################*/
@@ -79,6 +80,7 @@ typedef struct{
     uint16_t    pct_tx_cnt;             // Send packets counter
     uint16_t    pct_rx_cnt;             // Received packets counter
     uint8_t     flag_lost_connection;   // Flag that indicates connection lost (after n of retransmitions)
+    uint8_t     flag_btn_rcon;          // Flag for button triggered reconnection
     uint16_t    pct_fail_cnt;           // Counter for failed packets (calculated based on packet number - if next packet num. is not +1 -> pct_fail_cnt++)
 
 } s_device;

@@ -11,7 +11,7 @@
 > - **Amon Board** — flight controller hardware & firmware  
 >   https://github.com/TilenTinta/Amon_Board
 > - **Amon Ground Control** — desktop GCS for telemetry & control  
->   https://github.com/TilenTinta/Amon_Ground_Control
+>   https://github.com/TilenTinta/Amon_GroundControl_Software
 
 ![Amon Link](https://github.com/TilenTinta/Amon_Link/blob/main/Images/Assembly%20v5.png)  
 

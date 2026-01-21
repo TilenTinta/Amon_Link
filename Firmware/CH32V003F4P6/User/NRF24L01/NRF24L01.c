@@ -491,7 +491,7 @@ uint8_t NRF24_Send(s_nRF24L01 *dev)
 
     // Start transmition
     nrf_ce_high(dev);
-    Delay_Us(15);                 // >10?s required
+    Delay_Us(100);                 // >10?s required
     nrf_ce_low(dev);
 
     return 0;
@@ -579,31 +579,55 @@ uint8_t NRF24_ReadRXPayload(s_nRF24L01 *dev)
  */
 uint8_t NRF24_SetTXAddress(s_nRF24L01 *dev, const uint8_t *addr)
 {
-    uint8_t addr_len = dev->config->addr_width + 2; // AW encoding: 3¨C5 bytes (register value + 2)
+    // uint8_t addr_len = dev->config->addr_width + 2; // AW encoding: 3¨C5 bytes (register value + 2)
 
-    // TX address
+    // // TX address
+    // nrf_cs_low(dev);
+
+    // nrf_spi_txrx(dev, W_REGISTER | TX_ADDR);
+
+    // for (uint8_t i = 0; i < addr_len; i++) 
+    // {
+    //     nrf_spi_txrx(dev, addr[i]);
+    // }
+
+    // nrf_cs_high(dev);
+
+    // // RX_ADDR_P0 must match TX_ADDR for auto-ack
+    // nrf_cs_low(dev);
+
+    // nrf_spi_txrx(dev, W_REGISTER | RX_ADDR_P0);
+
+    // for (uint8_t i = 0; i < addr_len; i++) 
+    // {
+    //     nrf_spi_txrx(dev, addr[i]);
+    // }
+
+    // nrf_cs_high(dev);
+
+    // return 0;
+
+
+
+    uint8_t addr_len = dev->config->addr_width + 2;
+
+    // Set TX address only
     nrf_cs_low(dev);
-
     nrf_spi_txrx(dev, W_REGISTER | TX_ADDR);
-
-    for (uint8_t i = 0; i < addr_len; i++) 
-    {
+    for (uint8_t i = 0; i < addr_len; i++) {
         nrf_spi_txrx(dev, addr[i]);
     }
-
     nrf_cs_high(dev);
 
-    // RX_ADDR_P0 must match TX_ADDR for auto-ack
-    nrf_cs_low(dev);
-
-    nrf_spi_txrx(dev, W_REGISTER | RX_ADDR_P0);
-
-    for (uint8_t i = 0; i < addr_len; i++) 
-    {
-        nrf_spi_txrx(dev, addr[i]);
+    // ONLY match RX_ADDR_P0 if this device expects ACKs
+    if (dev->config->auto_ack) {
+        nrf_cs_low(dev);
+        nrf_spi_txrx(dev, W_REGISTER | RX_ADDR_P0);
+        for (uint8_t i = 0; i < addr_len; i++) {
+            nrf_spi_txrx(dev, addr[i]);
+        }
+        nrf_cs_high(dev);
     }
-
-    nrf_cs_high(dev);
 
     return 0;
 }

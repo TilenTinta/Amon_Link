@@ -23,7 +23,7 @@ User/main.o: ../User/main.c \
  c:/DATA/Projects/Amon_Link/Firmware/CH32V003F4P6/Peripheral/inc/ch32v00x_opa.h \
  c:/DATA/Projects/Amon_Link/Firmware/CH32V003F4P6/Peripheral/inc/ch32v00x.h \
  ../User/main.h ../User/NRF24L01/NRF24L01.h \
- ../User/DataTranscode/data_transcode.h
+ ../User/DataTranscode/data_transcode.h ../User/device.h
 c:/DATA/Projects/Amon_Link/Firmware/CH32V003F4P6/Debug/debug.h:
 c:/DATA/Projects/Amon_Link/Firmware/CH32V003F4P6/Peripheral/inc/ch32v00x.h:
 c:/DATA/Projects/Amon_Link/Firmware/CH32V003F4P6/Core/core_riscv.h:
@@ -50,3 +50,4 @@ c:/DATA/Projects/Amon_Link/Firmware/CH32V003F4P6/Peripheral/inc/ch32v00x.h:
 ../User/main.h:
 ../User/NRF24L01/NRF24L01.h:
 ../User/DataTranscode/data_transcode.h:
+../User/device.h:
