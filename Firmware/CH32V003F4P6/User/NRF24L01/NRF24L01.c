@@ -456,7 +456,13 @@ uint8_t NRF24_Send(s_nRF24L01 *dev)
 {
     uint8_t cmd;
 
-    while(dev->flag_tx_in_progress);    // Block next send if previous in progress
+    // Block next send if previous in progress
+    uint32_t timeout = 100000; // Adjust
+    while(dev->flag_tx_in_progress) {
+        if (--timeout == 0) {
+        	break;
+        }
+    }
     dev->flag_tx_in_progress = 1;
 
     // Device config check
