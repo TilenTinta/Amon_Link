@@ -287,12 +287,14 @@ void NRF24_HandleIRQ(s_nRF24L01 *dev)
     if (status & TX_DS) 
     {
         dev->buffers.flag_tx_done = 1;
+        dev->flag_tx_in_progress = 0;
     }
 
     // max number of retransmits reached
     if (status & MAX_RT) 
     {
         dev->buffers.flag_max_rxs_reached = 1;
+        dev->flag_tx_in_progress = 0;
     }
 
     // clear only the flags that were set
@@ -454,6 +456,9 @@ uint8_t NRF24_Send(s_nRF24L01 *dev)
 {
     uint8_t cmd;
 
+    while(dev->flag_tx_in_progress);    // Block next send if previous in progress
+    dev->flag_tx_in_progress = 1;
+
     // Device config check
     if (dev->role != NRF_ROLE_PTX) 
     {
@@ -556,7 +561,7 @@ uint8_t NRF24_ReadRXPayload(s_nRF24L01 *dev)
     nrf_cs_high(dev);
 
     // Clear IRQ
-    // NRF24_WriteRegister(dev, STATUS, RX_DR, NULL);
+    NRF24_WriteRegister(dev, STATUS, RX_DR, NULL);
 
     dev->buffers.flag_new_rx = 0;   // Data received no new data
     dev->buffers.rx_lenght = payload_len;   // save lenght

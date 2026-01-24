@@ -357,11 +357,13 @@ void UART_encode(s_packets *packets, uint8_t *raw_uart_data)
         }
     }
     
-    uint8_t eof_num = (uint8_t)(HEADER_SHIFT_UART + packets->uart_packet.plen);
+    uint16_t crc_len = (HEADER_SHIFT_UART - 1) + packets->uart_packet.plen;
+    uint8_t crc_index = HEADER_SHIFT_UART + packets->uart_packet.plen;
 
-    uint16_t crc_temp = crc16_cal(&raw_uart_data[1], (uint16_t)eof_num);
-    raw_uart_data[eof_num] = (uint8_t)(crc_temp);
-    raw_uart_data[eof_num + 1] = (uint8_t)(crc_temp >> 8);
+    uint16_t crc_temp = crc16_cal(&raw_uart_data[1], crc_len);
+
+    raw_uart_data[crc_index]     = (uint8_t)(crc_temp & 0xFF);
+    raw_uart_data[crc_index + 1] = (uint8_t)(crc_temp >> 8);
 }
 
 

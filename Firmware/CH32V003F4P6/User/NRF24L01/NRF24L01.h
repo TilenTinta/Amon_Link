@@ -340,6 +340,7 @@ typedef struct {
     uint8_t             irq_flag;       // IRQ flag - interrupt detected
     uint8_t             irq_on_pipe;    // number of pipe where irq is detected
     uint8_t             irq_status;     // Flag that indicates interrupt
+    uint8_t             flag_tx_in_progress;    // Flag that blocks next uart receive if old one not finished yet
 
     e_nrf_radion_id     id;             // Radio ID
     e_nrf_role          role;           // Set radio as receiver/transmiter

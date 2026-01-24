@@ -52,23 +52,24 @@ SPI_HandleTypeDef hspi1;                                    // SPI handle
 
 // Radio 1 configurations (application specific)
 static const s_nrf_config radio_tx_cfg = {
-    .channel = 40,
+    .channel = 70,
     .addr_width = AW_5BYTE,
     .auto_ack = 1,
     .dynamic_payload = 1,
-    .retries = 8, // 10
-    .retry_delay = ARD_2000us, // ARD_1000us
+    .retries = 15, // 8
+    .retry_delay = ARD_3500us, // ARD_1000us
     .datarate = NRF_DATARATE_1MBPS,
     .power = NRF_POWER_0DBM,   
 };
 
 static const s_pipe_addr radio_tx_addr = {
-    .tx_addr = { 0xE7, 0xE7, 0xE7, 0xE7, 0xE7 }
+    //.tx_addr = { 0xE7, 0xE7, 0xE7, 0xE7, 0xE7 }
+    .tx_addr = { 0xD4, 0xB2, 0xAA, 0x78, 0x50 }
 };
 
 // Radio 1 configurations (application specific)
 static const s_nrf_config radio_rx_cfg = {
-    .channel = 100, //42
+    .channel = 100, //100
     .addr_width = AW_5BYTE,
     .auto_ack = 1,
     .dynamic_payload = 1,
@@ -79,7 +80,8 @@ static const s_nrf_config radio_rx_cfg = {
 };
 
 static const s_pipe_addr radio_rx_addr = {
-    .pipe0_rx_addr = { 0xE7, 0xE7, 0xE7, 0xE7, 0xE8 }
+    //.pipe0_rx_addr = { 0xE7, 0xE7, 0xE7, 0xE7, 0xEE } //0xE8
+    .pipe0_rx_addr = { 0xC2, 0xA1, 0x55, 0x12, 0x01 } 
 };
 
 
@@ -157,7 +159,7 @@ int main(void)
                     break;
                 
                 case TRANSCODE_BROADCAST:
-                    device.state = STATE_CONN_START;    // Trigger new reconections
+                    device.state = STATE_RUNNING;       // Trigger new reconections - TODO
                     break;
                 
                 case TRANSCODE_VER_ERR:                 // Wrong version of packet
@@ -308,18 +310,16 @@ int main(void)
                 } 
                 else
                 {
-                    device.state = STATE_CONN_START;    // OK... continue
+                    device.state = STATE_RUNNING;       // OK... continue
+                    GPIO_WriteBit(GPIOD, LED_BLUE, Bit_SET);
                 }
                                                 
                 break;
 
 
 
-            // STATE: Start pairing routine to connect device with a drone
-            case STATE_CONN_START:
-
-                // TODO: pairing routine
-                device.conn_status = CONN_STATUS_OK;   // TEST
+            // STATE: Device and drone are connected, data can be send/received
+            case STATE_RUNNING:
 
                 // Trigger packet sending by button press
                 if (device.flag_btn_rcon == 1)
@@ -334,24 +334,7 @@ int main(void)
                     NRF24_Send(&radio1);
                     device.flag_btn_rcon = 0;
                 }
-
-                // Pairing is successfull
-                if (device.conn_status == CONN_STATUS_OK) 
-                {
-                    device.flag_lost_connection = 0;
-                    GPIO_WriteBit(GPIOD, LED_BLUE, Bit_SET);
-                    device.state = STATE_CONN_OK;
-                }
                 
-                // Pairing is NOT successfull 
-                //  -> IRQ timeout trigger (device.conn_status == CONN_STATUS_NOK)
-
-                break;
-
-
-
-            // STATE: Device and drone are connected, data can be send/received
-            case STATE_CONN_OK:
 
                 // ### Experimental - only option to get signal quality
                 /*
@@ -364,6 +347,7 @@ int main(void)
                     else                radio1.strength = LINK_BAD;
                 }
                 */
+
 
                 // Select what type of communication will be used (Drone to PC)
                 switch (device.conn_type) 
@@ -385,7 +369,9 @@ int main(void)
                             if (buffers.flag_new_uart_tx_data)
                             {
                                 UART_encode(&data_packets, buffers.buffer_UART);
-                                UartSendBuffer(buffers.buffer_UART, sizeof(buffers.buffer_UART));
+                                UartSendBuffer(buffers.buffer_UART, (data_packets.uart_packet.len + 2)); //sizeof(buffers.buffer_UART)
+                                //memcpy(buffers.buffer_UART, buffers.bufferDMA_RF_UART, sizeof(buffers.buffer_UART));
+                                //Start_DMA_USART_TX((data_packets.uart_packet.len + 2));
                                 buffers.flag_new_uart_tx_data = 0;
                             }
 
@@ -421,7 +407,8 @@ int main(void)
                         if (radio2.buffers.flag_new_rx)
                         {
                             NRF24_ReadRXPayload(&radio2);
-                            buffers.flag_new_uart_tx_data = 1;
+                            //buffers.flag_new_uart_tx_data = 1;
+                            buffers.flag_new_rf_rx_data = 1;
                         }
                         
                     break;
@@ -898,7 +885,7 @@ void USART1_IRQHandler(void)
         if (data == SIG_SOF && len_new_rx_data == 0)    // No flag for new packet and SOA packet
         {
             buffers.flag_USB_RX_new = 1;                                        // Indicate new data received
-            buffers.flag_new_uart_rx_data = 0;                                        // Clear end of packet flag
+            buffers.flag_new_uart_rx_data = 0;                                  // Clear end of packet flag
             len_new_rx_data = 0;                                                // Clear packet counter
         }
         else if (buffers.flag_USB_RX_new == 1 && len_new_rx_data == 0)          // Flag for new packet, but no lenght of packet yet
@@ -910,6 +897,7 @@ void USART1_IRQHandler(void)
         {
             buffers.flag_new_uart_rx_data = 1;                                  // Indicate end of packet
             cntBuffer_UART = 0;                                                 // Clear UART counter
+            len_new_rx_data = 0;
         }
 
         // Clear RX flag (otherwise constantly triggered IRQ)
@@ -951,12 +939,12 @@ void EXTI7_0_IRQHandler(void)
     // External button - reconnect (no debauncing logic)
     if(EXTI_GetITStatus(EXTI_Line4) != RESET)
     {
-        if (device.state != STATE_CONN_START)
-        {
-            device.state = STATE_CONN_START;
-            device.flag_btn_rcon = 1;
-            GPIO_WriteBit(GPIOC, LED_RED, Bit_RESET);
-        }
+        // if (device.state != STATE_CONN_START)
+        // {
+        //     device.state = STATE_CONN_START;
+        //     device.flag_btn_rcon = 1;
+        //     GPIO_WriteBit(GPIOC, LED_RED, Bit_RESET);
+        // }
 
         EXTI_ClearITPendingBit(EXTI_Line4);     // Clear Flag
     }
@@ -994,28 +982,28 @@ void TIM2_IRQHandler(void)
     if (TIM_GetITStatus(TIM2, TIM_IT_Update) != RESET)
     {
 
-        if (device.state == STATE_CONN_START)
-        {
-            // Timer counters
-            cntBlink++;
-            cntConnectTimeout++;
+        // if (device.state == STATE_CONN_START)
+        // {
+        //     // Timer counters
+        //     cntBlink++;
+        //     cntConnectTimeout++;
 
-            // Blink LED (twice per second)
-            if (cntBlink >= 12)
-            {
-                GPIO_WriteBit(GPIOD, LED_BLUE, (BitAction)!GPIO_ReadOutputDataBit(GPIOD, LED_BLUE));
-                cntBlink = 0;
-            }
+        //     // Blink LED (twice per second)
+        //     if (cntBlink >= 12)
+        //     {
+        //         GPIO_WriteBit(GPIOD, LED_BLUE, (BitAction)!GPIO_ReadOutputDataBit(GPIOD, LED_BLUE));
+        //         cntBlink = 0;
+        //     }
 
-            // Signal failed connection (after 10 seconds)
-            if (cntConnectTimeout >= 500)
-            {
-                cntConnectTimeout = 0;
-                device.state = STATE_CONN_FAIL;                                 // failed connection
-                device.conn_status = CONN_STATUS_NOK;                           // discnnected
-                GPIO_WriteBit(GPIOD, LED_BLUE, Bit_RESET);                      // Turn off blue LED
-            }
-        }
+        //     // Signal failed connection (after 10 seconds)
+        //     if (cntConnectTimeout >= 500)
+        //     {
+        //         cntConnectTimeout = 0;
+        //         device.state = STATE_CONN_FAIL;                                 // failed connection
+        //         device.conn_status = CONN_STATUS_NOK;                           // discnnected
+        //         GPIO_WriteBit(GPIOD, LED_BLUE, Bit_RESET);                      // Turn off blue LED
+        //     }
+        // }
 
         // Reset conter for connection timeout if connection is established
         if (device.conn_status == CONN_STATUS_OK && cntConnectTimeout > 0) cntConnectTimeout = 0;

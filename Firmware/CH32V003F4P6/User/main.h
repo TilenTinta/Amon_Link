@@ -32,11 +32,10 @@
 #define RADIO_NO            2           // Number of radios (1 or 2)
 
 #define STATE_INIT          0           // State machine value: boot-up (blue light)
-#define STATE_CONN_START    1           // State machine value: try to connect (reconnect triggers the same state)
-#define STATE_CONN_OK       2           // State machine value: successfully connected (green light on)
-#define STATE_CONN_FAIL     3           // State machine value: connect failed (red light blinking, do nothing)
-#define STATE_IDLE          4           // State machine value: state where device doesnt do anything
-#define STATE_FAIL          5           // State machine value: device initialization fail
+#define STATE_RUNNING       1           // State machine value: device initializet correctly, data trafic is running
+#define STATE_CONN_FAIL     2           // State machine value: connect failed (red light blinking, do nothing)
+#define STATE_IDLE          3           // State machine value: state where device doesnt do anything
+#define STATE_FAIL          4           // State machine value: device initialization fail
 
 #define CONN_STATUS_OK      1           // Flag that indicates the connection status - connected
 #define CONN_STATUS_NOK     0           // Flag that indicates the connection status - disconnected
