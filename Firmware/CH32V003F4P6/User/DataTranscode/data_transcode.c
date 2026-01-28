@@ -261,7 +261,7 @@ uint8_t UART_decode(uint8_t *raw_uart_data, s_packets *packets, uint8_t *rf_tx_f
  *
  * @return  error code - watch defines
  */
-uint8_t RF_decode(uint8_t *raw_rf_data, s_packets *packets,  uint8_t *uart_tx_flag)
+uint8_t RF_decode(uint8_t *raw_rf_data, s_packets *packets,  uint8_t *uart_tx_flag, uint8_t *stream_flag)
 {
     // Parse received buffer
     packetDataReset();
@@ -293,6 +293,7 @@ uint8_t RF_decode(uint8_t *raw_rf_data, s_packets *packets,  uint8_t *uart_tx_fl
         case ID_PC:
 
             *uart_tx_flag = 1;    // indicate that new data to send is available
+            if (packets->rf_packet.plen > 5) *stream_flag = 1; // detect if packet is telemetry data
             
             // save in fields of UART packet
             packets->uart_packet.sof       = SIG_SOF;

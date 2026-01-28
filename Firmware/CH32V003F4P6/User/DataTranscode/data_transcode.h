@@ -185,7 +185,7 @@ typedef struct {
 /*###########################################################################################################################################################*/
 /* Functions */
 uint8_t UART_decode(uint8_t *raw_uart_data, s_packets* packets, uint8_t *rf_tx_flag);
-uint8_t RF_decode(uint8_t *raw_rf_data, s_packets *packets, uint8_t *uart_tx_flag);
+uint8_t RF_decode(uint8_t *raw_rf_data, s_packets *packets, uint8_t *uart_tx_flag, uint8_t *stream_flag);
 void UART_encode(s_packets *packets, uint8_t *raw_uart_data);
 void RF_encode(s_packets *packets, uint8_t *raw_rf_data, uint8_t *tx_lenght);
 uint16_t crc16_cal(const uint8_t *data, uint16_t length);

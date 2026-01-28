@@ -51,10 +51,21 @@ SPI_HandleTypeDef hspi1;                                    // SPI handle
 
 
 // Radio 1 configurations (application specific)
-static const s_nrf_config radio_tx_cfg = {
+static const s_nrf_config radio_tx_normal_cfg = {
     .channel = 70,
     .addr_width = AW_5BYTE,
     .auto_ack = 1,
+    .dynamic_payload = 1,
+    .retries = 15, // 8
+    .retry_delay = ARD_3500us, // ARD_1000us
+    .datarate = NRF_DATARATE_1MBPS,
+    .power = NRF_POWER_0DBM,   
+};
+
+static const s_nrf_config radio_tx_stream_cfg = {
+    .channel = 70,
+    .addr_width = AW_5BYTE,
+    .auto_ack = 0,
     .dynamic_payload = 1,
     .retries = 15, // 8
     .retry_delay = ARD_3500us, // ARD_1000us
@@ -68,10 +79,21 @@ static const s_pipe_addr radio_tx_addr = {
 };
 
 // Radio 1 configurations (application specific)
-static const s_nrf_config radio_rx_cfg = {
+static const s_nrf_config radio_rx_normal_cfg = {
     .channel = 100, //100
     .addr_width = AW_5BYTE,
     .auto_ack = 1,
+    .dynamic_payload = 1,
+    .retries = 0,
+    .retry_delay = 0,
+    .datarate = NRF_DATARATE_1MBPS,
+    .power = NRF_POWER_MINUS_6DBM,
+};
+
+static const s_nrf_config radio_rx_stream_cfg = {
+    .channel = 100, //100
+    .addr_width = AW_5BYTE,
+    .auto_ack = 0,
     .dynamic_payload = 1,
     .retries = 0,
     .retry_delay = 0,
@@ -131,6 +153,7 @@ int main(void)
         radio1.op_modes = NRF_MODE_PWR_ON_RST;              // set default radio state
         radio2.op_modes = NRF_MODE_PWR_ON_RST;              // set default radio state
         device.flag_lost_connection = 0;
+        device.flag_data_stream = 0;
         radio1.irq_on_pipe = 0xFF;
         radio2.irq_on_pipe = 0xFF;
 
@@ -160,6 +183,7 @@ int main(void)
                 
                 case TRANSCODE_BROADCAST:
                     device.state = STATE_RUNNING;       // Trigger new reconections - TODO
+                    device.flag_data_stream = 0;
                     break;
                 
                 case TRANSCODE_VER_ERR:                 // Wrong version of packet
@@ -172,6 +196,7 @@ int main(void)
                     break;
                     
                 case TRANSCODE_OK:                      // Packet OK
+                    device.flag_data_stream = 0;
                     break;
             }
         }
@@ -183,7 +208,7 @@ int main(void)
             buffers.flag_new_rf_rx_data = 0;
 
             // TODO: Decode
-            uint8_t ret = RF_decode(radio2.buffers.RX_FIFO, &data_packets, &buffers.flag_new_uart_tx_data);
+            uint8_t ret = RF_decode(radio2.buffers.RX_FIFO, &data_packets, &buffers.flag_new_uart_tx_data, &device.flag_data_stream);
 
             // Based on return values trigger events
             switch (ret) 
@@ -205,6 +230,13 @@ int main(void)
                     
                 case TRANSCODE_OK:                      // Packet OK
                     break;
+            }
+
+            if (device.flag_data_stream == 1)
+            {
+                radio2.config = &radio_rx_stream_cfg;
+                NRF24_init(&radio2);
+                GPIO_WriteBit(GPIOC, LED_RED, Bit_SET);
             }
         }
 
@@ -284,14 +316,14 @@ int main(void)
 
                 // Set radio configurations and init
                 radio1.role     = NRF_ROLE_PTX;
-                radio1.config   = &radio_tx_cfg;
+                radio1.config   = &radio_tx_normal_cfg;
                 radio1.address  = &radio_tx_addr;
                 radio1.id       = NRF_ID_1;
                 NRF24_init(&radio1);
                 NRF24_SetTXAddress(&radio1, radio1.address->tx_addr);
 
                 radio2.role     = NRF_ROLE_PRX;
-                radio2.config   = &radio_rx_cfg;
+                radio2.config   = &radio_rx_normal_cfg;
                 radio2.address  = &radio_rx_addr;
                 radio2.id       = NRF_ID_2;
                 NRF24_init(&radio2);
@@ -304,7 +336,7 @@ int main(void)
                 GPIO_WriteBit(GPIOD, LED_BLUE, Bit_RESET);
 
                 // Check radio initialization
-                if (radio1.radioErr == 1 || radio2.radioErr == 1)
+                if (radio1.radioErr == NRF_ERR_BOOT || radio2.radioErr == NRF_ERR_BOOT)
                 {
                     device.state = STATE_FAIL;          // Trigger init fail
                 } 
@@ -361,6 +393,15 @@ int main(void)
                             if (buffers.flag_new_rf_tx_data)
                             {
                                 RF_encode(&data_packets, radio1.buffers.TX_FIFO, &radio1.buffers.tx_lenght);
+                                
+                                // If data is send (critical) -> ACK required
+                                if (device.flag_data_stream == 1)
+                                {
+                                    radio2.config = &radio_rx_normal_cfg;
+                                    NRF24_init(&radio2);
+                                    GPIO_WriteBit(GPIOC, LED_RED, Bit_RESET);
+                                }
+
                                 NRF24_Send(&radio1);
                                 buffers.flag_new_rf_tx_data = 0;
                             }
@@ -975,7 +1016,7 @@ void EXTI7_0_IRQHandler(void)
 void TIM2_IRQHandler(void)
 {
 
-    static uint8_t cntBlink = 0;
+    //static uint8_t cntBlink = 0;
     static uint16_t cntConnectTimeout = 0;
     static uint8_t cntFailBlink = 0;
 

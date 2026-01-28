@@ -590,36 +590,6 @@ uint8_t NRF24_ReadRXPayload(s_nRF24L01 *dev)
  */
 uint8_t NRF24_SetTXAddress(s_nRF24L01 *dev, const uint8_t *addr)
 {
-    // uint8_t addr_len = dev->config->addr_width + 2; // AW encoding: 3¨C5 bytes (register value + 2)
-
-    // // TX address
-    // nrf_cs_low(dev);
-
-    // nrf_spi_txrx(dev, W_REGISTER | TX_ADDR);
-
-    // for (uint8_t i = 0; i < addr_len; i++) 
-    // {
-    //     nrf_spi_txrx(dev, addr[i]);
-    // }
-
-    // nrf_cs_high(dev);
-
-    // // RX_ADDR_P0 must match TX_ADDR for auto-ack
-    // nrf_cs_low(dev);
-
-    // nrf_spi_txrx(dev, W_REGISTER | RX_ADDR_P0);
-
-    // for (uint8_t i = 0; i < addr_len; i++) 
-    // {
-    //     nrf_spi_txrx(dev, addr[i]);
-    // }
-
-    // nrf_cs_high(dev);
-
-    // return 0;
-
-
-
     uint8_t addr_len = dev->config->addr_width + 2;
 
     // Set TX address only
@@ -715,6 +685,15 @@ uint8_t NRF24_GetLinkQuality(s_nRF24L01 *dev)
 
 
 
+/*********************************************************************
+ * @fn      NRF24_GetRxPipe
+ *
+ * @param   *dev: device struct
+ *
+ * @brief   Get pipe number where RX is received
+ *
+ * @return  pipe number
+ */
 uint8_t NRF24_GetRxPipe(s_nRF24L01 *dev)
 {
     uint8_t status;

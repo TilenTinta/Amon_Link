@@ -81,6 +81,7 @@ typedef struct{
     uint8_t     flag_lost_connection;   // Flag that indicates connection lost (after n of retransmitions)
     uint8_t     flag_btn_rcon;          // Flag for button triggered reconnection
     uint16_t    pct_fail_cnt;           // Counter for failed packets (calculated based on packet number - if next packet num. is not +1 -> pct_fail_cnt++)
+    uint8_t     flag_data_stream;       // Flag for data stream mode (radio init change)
 
 } s_device;
 
