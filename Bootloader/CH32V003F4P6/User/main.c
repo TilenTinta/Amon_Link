@@ -66,6 +66,7 @@ int main(void)
     {
         // Turn on BLUE LED
         GPIO_WriteBit(GPIOD, LED_BLUE, Bit_SET);
+        GPIO_WriteBit(GPIOC, LED_RED, Bit_SET);
 
         while(1)
         {

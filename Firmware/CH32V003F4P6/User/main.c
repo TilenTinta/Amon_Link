@@ -129,7 +129,7 @@ int main(void)
     if (device.init_done == 0)
     {
         // Device is alive 
-        GPIO_WriteBit(GPIOC, LED_RED, Bit_SET);             
+        //GPIO_WriteBit(GPIOC, LED_RED, Bit_SET);             
         GPIO_WriteBit(GPIOD, LED_BLUE, Bit_SET); 
 
         GPIO_WriteBit(GPIOC, NRF_CE1, Bit_RESET);
@@ -195,8 +195,16 @@ int main(void)
                 case TRANSCODE_CRC_ERR:                 // Corupted frame / CRC
                     break;
                     
-                case TRANSCODE_OK:                      // Packet OK
+                case TRANSCODE_DEST_RF:                 // Packet for RF transmit
                     device.flag_data_stream = 0;
+                    break;
+
+                case TRANSCODE_DEST_LINK:               // Packet for link device
+                    device.flag_data_stream = 0;
+                    device.flag_link_command_rx = 1;    // Report link command 
+                    break;
+
+                default:                                // Default state
                     break;
             }
         }
@@ -228,7 +236,10 @@ int main(void)
                 case TRANSCODE_CRC_ERR:                 // Corupted frame / CRC
                     break;
                     
-                case TRANSCODE_OK:                      // Packet OK
+                case TRANSCODE_DEST_PC:                 // Packet for PC SW
+                    break;
+                
+                case TRANSCODE_DEST_LINK:               // Packet for Link device
                     break;
             }
 
@@ -236,7 +247,7 @@ int main(void)
             {
                 radio2.config = &radio_rx_stream_cfg;
                 NRF24_init(&radio2);
-                GPIO_WriteBit(GPIOC, LED_RED, Bit_SET);
+                //GPIO_WriteBit(GPIOC, LED_RED, Bit_SET);
             }
         }
 
@@ -409,11 +420,21 @@ int main(void)
                             // # UART #
                             if (buffers.flag_new_uart_tx_data)
                             {
+                                buffers.flag_new_uart_tx_data = 0;
                                 UART_encode(&data_packets, buffers.buffer_UART);
                                 UartSendBuffer(buffers.buffer_UART, (data_packets.uart_packet.len + 2)); //sizeof(buffers.buffer_UART)
                                 //memcpy(buffers.buffer_UART, buffers.bufferDMA_RF_UART, sizeof(buffers.buffer_UART));
                                 //Start_DMA_USART_TX((data_packets.uart_packet.len + 2));
-                                buffers.flag_new_uart_tx_data = 0;
+
+                                if (device.flag_data_stream)
+                                {
+                                    uint8_t val = GPIO_ReadOutputDataBit(GPIOC, LED_RED);
+                                    GPIO_WriteBit(GPIOC, LED_RED, (int)(!val));  
+                                } 
+                                else
+                                {
+                                    GPIO_WriteBit(GPIOC, LED_RED, Bit_RESET); 
+                                }
                             }
 
                         }
@@ -433,7 +454,7 @@ int main(void)
                             radio1.buffers.flag_max_rxs_reached = 0;
 
                             // Report failed transmit - problem in PC client
-                            // report_err_tx(&data_packets);
+                            // UART_report_err_tx(&data_packets);
                             // UART_encode(&data_packets, buffers.buffer_UART);
                             // UartSendBuffer(buffers.buffer_UART, sizeof(buffers.buffer_UART));
 
@@ -450,6 +471,32 @@ int main(void)
                             NRF24_ReadRXPayload(&radio2);
                             //buffers.flag_new_uart_tx_data = 1;
                             buffers.flag_new_rf_rx_data = 1;
+                        }
+
+                        // Decode data for Link device
+                        if (device.flag_link_command_rx)
+                        {
+                            device.flag_link_command_rx = 0;
+
+                            switch (data_packets.uart_packet.opcode) 
+                            {
+                                case OPT_TELEMETRY_STREAM:
+
+                                    if (data_packets.uart_packet.payload[0] == 1)
+                                    {
+                                        device.flag_data_stream = 1;
+                                        GPIO_WriteBit(GPIOC, LED_RED, Bit_SET);
+                                    }
+                                    else
+                                    {
+                                        device.flag_data_stream = 0;
+                                        GPIO_WriteBit(GPIOC, LED_RED, Bit_RESET); 
+                                    }
+                                    break;
+
+                                default:
+                                    break;
+                            }
                         }
                         
                     break;

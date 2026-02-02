@@ -67,11 +67,14 @@
 #define CODE_DATA_WRITEN        0x10    // Succesfuly writen data packet
 
 // TRANSCODE RETURN
-#define TRANSCODE_OK            0x00    // No error / no response
+#define TRANSCODE_NaN           0x00    // No error / no response / not used
 #define TRANSCODE_CRC_ERR       0x01    // CRC error
 #define TRANSCODE_VER_ERR       0x02    // Packet version error
 #define TRANSCODE_DEST_ERR      0x03    // Destination address error
 #define TRANSCODE_BROADCAST     0x04    // Broadcast command
+#define TRANSCODE_DEST_LINK     0x05    // Link command
+#define TRANSCODE_DEST_RF       0x06    // Packet for RF transmition
+#define TRANSCODE_DEST_PC       0x07    // Packet for PC-UART transmition
 #define TRANSCODE_BOOT_PKT      0x0A    // Bootloader packet received
 
 // Address / IDs (1 byte)
@@ -96,6 +99,7 @@
 #define OPT_ERROR_TX            0x03    // Error when transmiting packet
 #define OPT_PAIR_STATUS         0x10    // Status of pairing procedure
 #define OPT_PAIR_START          0x11    // Trigger pairing procedure
+#define OPT_TELEMETRY_STREAM    0x12    // Trigger telemetry data stream
 #define OPT_LINK_GET_PARAMS     0x20    // Get parameters from link device
 #define OPT_LINK_SET_PARAMS     0x21    // Set parameters on link device
 #define OPT_DRONE_GET_PARAMS    0x30    // Get parameters from drone

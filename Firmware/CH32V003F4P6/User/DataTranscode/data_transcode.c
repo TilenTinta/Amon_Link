@@ -179,16 +179,17 @@ uint8_t UART_decode(uint8_t *raw_uart_data, s_packets *packets, uint8_t *rf_tx_f
     packetDataReset();
     UART_packet_parse(packets, &raw_uart_data[0]);
 
-    // CRC check
+    // Packet lenght
     if (packets->boot_packet.plen != 0)
     {
-        // Bootloader format
+        // --- Bootloader format ---
         if (crc16_cal(&raw_uart_data[1], packets->boot_packet.plen - 1) != packets->boot_packet.crc16) return TRANSCODE_CRC_ERR;
         if (packets->boot_packet.addr == ID_LINK_BOOT) return TRANSCODE_BOOT_PKT;
     }
     else 
     {
-        // UART format
+        // --- UART format ---
+        // CRC check
         if (crc16_cal(&raw_uart_data[1], packets->uart_packet.len - 1) != packets->uart_packet.CRC) return TRANSCODE_CRC_ERR;
     }
 
@@ -211,11 +212,13 @@ uint8_t UART_decode(uint8_t *raw_uart_data, s_packets *packets, uint8_t *rf_tx_f
         // Destination device: link main application
         case ID_LINK_SW:
             //...
-            return TRANSCODE_OK;
+            return TRANSCODE_DEST_LINK;
             break;
 
         // Destination device: drone
         case ID_DRONE:
+
+            // Repack data and send over RF //
 
             *rf_tx_flag = 1;    // indicate that new data to send is available
             
@@ -231,7 +234,7 @@ uint8_t UART_decode(uint8_t *raw_uart_data, s_packets *packets, uint8_t *rf_tx_f
                 packets->rf_packet.payload[i] = packets->uart_packet.payload[i];
             }
 
-            return TRANSCODE_OK;
+            return TRANSCODE_DEST_RF;
             break;
 
         // Destination device: broadcast - triger connecting/search...
@@ -286,7 +289,7 @@ uint8_t RF_decode(uint8_t *raw_rf_data, s_packets *packets,  uint8_t *uart_tx_fl
         // Destination device: link main application
         case ID_LINK_SW:
             //...
-            return TRANSCODE_OK;
+            return TRANSCODE_DEST_LINK;
             break;
 
         // Destination device: PC
@@ -310,7 +313,7 @@ uint8_t RF_decode(uint8_t *raw_rf_data, s_packets *packets,  uint8_t *uart_tx_fl
                 packets->uart_packet.payload[i] = packets->rf_packet.payload[i];
             }
 
-            return TRANSCODE_OK;
+            return TRANSCODE_DEST_PC;
             break;
 
         // Destination device: broadcast
