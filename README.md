@@ -108,7 +108,7 @@ SECTIONS
   {
     ...
 ```
-Once the bootloader is flashed, you can put your device in firmware update mode by holding the **Reconnect** button while plugging in the USB cable or by triggering it via software. When the blue LED lights up, you're in firmware update mode!
+Once the bootloader is flashed, you can put your device in firmware update mode by holding the **Reconnect** button while plugging in the USB cable or by triggering it via software. When the blue and red LEDs are lights up, you're in firmware update mode!
 
 The firmware can be updated using a graphical application. The application is built with a Python backend and an Electron front end. You can select and import either a hex or a binary file. Once imported, the CRC32 checksum is calculated for the file.
 
@@ -122,21 +122,30 @@ This checksum is used during device connection. When the device connects, a hand
 
 ### LED Status Codes  
 
-| LED Pattern (App)     | Meaning                   |
+| LED Pattern (App)     | Meaning                  |
 |-----------------|---------------------------|
-| Blinking **red**  | Device initialization     |
-| Blinking **blue** | Connecting…               |
-| Solid **blue**    | Connection established    |
-| Solid **red**     | Connection failed         |
+| Constant blinking **red**   | Device initialization failed |
+| Solid **blue**    | Device initialized           |
+| Blinking **red**     | Received packet          |
 
 | LED Pattern (Boot)     | Meaning                   |
 |-----------------|---------------------------|
-| Solid **blue**    | Waiting on USB data    |
+| Solid **blue** and **red**    | Waiting on USB data    |
 
 
 ### Button Usage  
 
-Press the **button** to trigger a manual **reconnect** attempt.
+Press the **button** to trigger a manual **reconnect** attempt or befor powring up device to enter bootloader mode.
+
+
+## Range testing
+The plan for this device is not to reach over 1 km of range, but only a few meters are enough for now. To test this, I did a simple test. I connected the device to my laptop and established a connection from the **Ground control app** to **Amon Link** and from that to **Amon Lander**. After receiving telemetry data, I started moving away from the drone. This test was done with line of sight between the drone and link device.
+
+![Range test](https://github.com/TilenTinta/Amon_Link/blob/main/Images/PXL_20260131_140538853.jpg)  
+
+Because of field limitations, the test was not done until telemetry cut-off. The test will be repeated in the future to really get the limitation of radio range.
+
+![Range test](https://github.com/TilenTinta/Amon_Link/blob/main/Images/Distance_test.png)  
 
 ---
 
