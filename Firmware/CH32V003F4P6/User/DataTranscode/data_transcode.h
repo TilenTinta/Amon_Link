@@ -67,7 +67,7 @@
 #define CODE_DATA_WRITEN        0x10    // Succesfuly writen data packet
 
 // TRANSCODE RETURN
-#define TRANSCODE_NaN           0x00    // No error / no response / not used
+#define TRANSCODE_OK            0x00    // No error / no response / not used
 #define TRANSCODE_CRC_ERR       0x01    // CRC error
 #define TRANSCODE_VER_ERR       0x02    // Packet version error
 #define TRANSCODE_DEST_ERR      0x03    // Destination address error
@@ -123,6 +123,15 @@
 #define TVL_GPS                 0x32    // GPS lat(i32 1e-7deg), lon(i32), alt_cm(i32)
 #define TVL_ERR                 0x7F    // Error code (u8) + detail (optional ascii)
 // TODO: TBD
+
+#define TVL_STATE_STARTUP       0x40    // Drone state - startup (OPT_DRONE_SET_STATE)
+#define TVL_STATE_IDLE          0x41    // Drone state - idel (OPT_DRONE_SET_STATE)
+#define TVL_STATE_ERROR         0x42    // Drone state - error (OPT_DRONE_SET_STATE)
+#define TVL_STATE_ARM           0x43    // Drone state - arm (OPT_DRONE_SET_STATE)
+#define TVL_STATE_FLY           0x44    // Drone state - fly (OPT_DRONE_SET_STATE)
+#define TVL_STATE_FLY_OVER      0x45    // Drone state - fly_over (OPT_DRONE_SET_STATE)
+#define TVL_STATE_CALIB         0x46    // Drone state - calib (OPT_DRONE_SET_STATE)
+
 
 /*###########################################################################################################################################################*/
 /* Structs */

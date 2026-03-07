@@ -108,7 +108,7 @@ static const s_pipe_addr radio_rx_addr = {
 
 
 
-/*############################# ---MAIN--- ######################################################################################################################*/
+/* ########################################### --- MAIN --- ########################################### */
 
 int main(void)
 {
@@ -170,7 +170,6 @@ int main(void)
         {
             buffers.flag_new_uart_rx_data = 0;
 
-            // TODO: Decode
             uint8_t ret = UART_decode(buffers.buffer_UART, &data_packets, &buffers.flag_new_rf_tx_data);
             memset(buffers.buffer_UART, 0, sizeof(buffers.buffer_UART));
 
@@ -182,7 +181,7 @@ int main(void)
                     break;
                 
                 case TRANSCODE_BROADCAST:
-                    device.state = STATE_RUNNING;       // Trigger new reconections - TODO
+                    device.state = STATE_RUNNING;       // Trigger new reconections
                     device.flag_data_stream = 0;
                     break;
                 
@@ -461,7 +460,7 @@ int main(void)
                             if (device.pct_fail_cnt >= 5)
                             {
                                 device.flag_lost_connection = 1;
-                                device.state = STATE_CONN_FAIL;
+                                //device.state = STATE_CONN_FAIL;
                             } 
                         }
 
@@ -513,12 +512,12 @@ int main(void)
                     default:
                         device.state = STATE_CONN_FAIL;
                     break;
-                }
+                }       
                 break;
                 
 
 
-            // STATE: Pairing routine failed, reconnection must be triggered
+            // --- STATE: Pairing routine failed, reconnection must be triggered ---
             case STATE_CONN_FAIL:
                 {
                     // Report failed connection
@@ -533,21 +532,21 @@ int main(void)
 
 
 
-            // STATE: Idle mode where device just waits on user response
+            // --- STATE: Idle mode where device just waits on user response ---
             case STATE_IDLE:
                 // DO NOTHING... Wait on user (remote or physical)
                 break;
 
 
 
-            // STATE: Fail state if device / radion fail to initialize
+            // --- STATE: Fail state if device / radion fail to initialize ---
             case STATE_FAIL:
                 // DO NOTHING... Fast red LED blinks
                 break;
 
 
 
-            // STATE: Critical error in software
+            // --- STATE: Critical error in software ---
             default:
                 // Problem... - sw error
             break;
