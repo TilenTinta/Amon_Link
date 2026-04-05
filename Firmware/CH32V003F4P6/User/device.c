@@ -51,7 +51,7 @@ void UART_report_err_tx(s_packets *data)
 /*********************************************************************
  * @fn      UART_device_set_get
  *
- * @brief   Clear data in all packet structs
+ * @brief   
  *
  * @return  none
  */

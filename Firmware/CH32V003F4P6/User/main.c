@@ -165,7 +165,7 @@ int main(void)
 
     while(1)
     {
-        /* USB TRANSCODING HANDLING */
+        /*/////////////////////// USB TRANSCODING HANDLING ///////////////////////*/
         if (buffers.flag_new_uart_rx_data == 1) 
         {
             buffers.flag_new_uart_rx_data = 0;
@@ -209,13 +209,13 @@ int main(void)
         }
 
 
-        /* RF TRANSCODING HANDLING */
+        /*/////////////////////// RF TRANSCODING HANDLING ///////////////////////*/
         if (buffers.flag_new_rf_rx_data == 1) 
         {
             buffers.flag_new_rf_rx_data = 0;
 
             // TODO: Decode
-            uint8_t ret = RF_decode(radio2.buffers.RX_FIFO, &data_packets, &buffers.flag_new_uart_tx_data, &device.flag_data_stream);
+            uint8_t ret = RF_decode(radio2.buffers.RX_FIFO, &data_packets, &buffers.flag_new_uart_tx_data); //, &device.flag_data_stream
 
             // Based on return values trigger events
             switch (ret) 
@@ -236,6 +236,7 @@ int main(void)
                     break;
                     
                 case TRANSCODE_DEST_PC:                 // Packet for PC SW
+                    device.flag_data_stream = 1;
                     break;
                 
                 case TRANSCODE_DEST_LINK:               // Packet for Link device
@@ -251,7 +252,7 @@ int main(void)
         }
 
 
-        /* RADIO IRQ HANDLING */
+        /*/////////////////////// RADIO IRQ HANDLING ///////////////////////*/
         if (radio1.irq_flag == 1)
         {   
             // TX
@@ -272,7 +273,7 @@ int main(void)
         
 
 
-        /* MAIN STATE MACHINE */
+        /*/////////////////////// MAIN STATE MACHINE ///////////////////////*/
         switch(device.state)
         {
 
@@ -464,6 +465,7 @@ int main(void)
                             } 
                         }
 
+
                         // ### Receive data
                         if (radio2.buffers.flag_new_rx)
                         {
@@ -471,6 +473,7 @@ int main(void)
                             //buffers.flag_new_uart_tx_data = 1;
                             buffers.flag_new_rf_rx_data = 1;
                         }
+
 
                         // Decode data for Link device
                         if (device.flag_link_command_rx)
@@ -974,6 +977,11 @@ void USART1_IRQHandler(void)
             buffers.flag_USB_RX_new = 1;                                        // Indicate new data received
             buffers.flag_new_uart_rx_data = 0;                                  // Clear end of packet flag
             len_new_rx_data = 0;                                                // Clear packet counter
+
+            // New method - test
+            cntBuffer_UART = 0;
+            memset( buffers.buffer_UART, 0, sizeof( buffers.buffer_UART));
+            buffers.buffer_UART[cntBuffer_UART++] = data;
         }
         else if (buffers.flag_USB_RX_new == 1 && len_new_rx_data == 0)          // Flag for new packet, but no lenght of packet yet
         {

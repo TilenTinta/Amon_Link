@@ -77,6 +77,7 @@
 #define TRANSCODE_DEST_PC       0x07    // Packet for PC-UART transmition
 #define TRANSCODE_BOOT_PKT      0x0A    // Bootloader packet received
 #define TRANSCODE_LOG_DUMP		0x10	// Trugger log dump over uart
+#define TRANSCODE_LOG_RM		0x11	// Trugger log remove over uart
 
 // Address / IDs (1 byte)
 #define ID_PC                   0x01    // Address: PC
@@ -109,6 +110,7 @@
 #define OPT_DRONE_COMMAND       0x33    // Send command to drone (calibrate, save¡­)
 #define OPT_TELEMETRY           0x40    // Telemetry data from drone (STREAM; sub-type via TLVs)
 #define OPT_LOG_DUMP			0x50	// Flight log dump
+#define OPT_LOG_RM 				0x51	// Flight log remove
 
 // Payload format ¡ª TLV (Type-Length-Value): T(1B), L(1B), V(L bytes)
 #define TVL_BAT                 0x01    // Battery mV (u16 LE)
@@ -200,7 +202,7 @@ typedef struct {
 /*###########################################################################################################################################################*/
 /* Functions */
 uint8_t UART_decode(uint8_t *raw_uart_data, s_packets* packets, uint8_t *rf_tx_flag);
-uint8_t RF_decode(uint8_t *raw_rf_data, s_packets *packets, uint8_t *uart_tx_flag, uint8_t *stream_flag);
+uint8_t RF_decode(uint8_t *raw_rf_data, s_packets *packets, uint8_t *uart_tx_flag); // , uint8_t *stream_flag
 void UART_encode(s_packets *packets, uint8_t *raw_uart_data);
 void RF_encode(s_packets *packets, uint8_t *raw_rf_data, uint8_t *tx_lenght);
 uint16_t crc16_cal(const uint8_t *data, uint16_t length);
