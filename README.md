@@ -51,7 +51,7 @@ USB-powered RF bridge between **Amon Ground Control** (PC) and the **Amon Lander
 - **Power:** USB‑powered with onboard **3.3 V LDO**. 
 - **Connector:** **USB Type‑C**. 
 - **RF Link:** Dual **NRF24L01** radios with **RFX2401C (PA+LNA)** for long range and better SNR. 
-- **Indicators/Controls:** Status LED and **reconnect button**. 
+- **Indicators/Controls:** Status LED and button for reconnect/SW update. 
 
 ### Software & Compatibility
 
@@ -63,7 +63,7 @@ USB-powered RF bridge between **Amon Ground Control** (PC) and the **Amon Lander
 ### Diagnostics & Controls
 
 - **Status LED** for connection state. 
-- **Button** to trigger manual reconnect. 
+- **Button** to trigger manual reconnect and entering bootloader mode. 
 
 ---
 
@@ -84,8 +84,8 @@ USB-powered RF bridge between **Amon Ground Control** (PC) and the **Amon Lander
 
 ### Bootloader
 Firmware for device also includes bootloader option. To flash that:
-- First flash main firmware (folder: **Firmware**),
-- after that flash bootloader (folder: **Bootloader**)
+- First flash bootloader (folder: **Bootloader**),
+- after that you can flash main **hex** file over USB and desktop app (folder: **Firmware**)
 
 If bootloader is not used you **MUST** modify the code in folder **Firmware**. In file `Link.ld` change code on the top of the file to:
 
