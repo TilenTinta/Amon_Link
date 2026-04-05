@@ -4,6 +4,9 @@
 
 **Short description:** USB-powered RF bridge between **Amon Ground Control** (PC) and the **Amon Lander** drone, built around the WCH **CH32V003F4P6** MCU with **dual NRF24L01 + RFX2401C** radios for robust range. 
 
+![Amon Link](https://github.com/TilenTinta/Amon_Link/blob/main/Images/PXL_20260405_085348789.jpg)  
+
+
 > Part of the Amon Lander project:
 >
 > - **Amon Lander** — overall vehicle, frame, test/control SW, and data  
@@ -13,7 +16,6 @@
 > - **Amon Ground Control** — desktop GCS for telemetry & control  
 >   https://github.com/TilenTinta/Amon_GroundControl_Software
 
-![Amon Link](https://github.com/TilenTinta/Amon_Link/blob/main/Images/PXL_20260405_085348789.jpg)  
 
 ---
 
