@@ -1,8 +1,6 @@
 # Amon Link
 
-**Project Status:** In Progress  
-
-**Short description:** USB-powered RF bridge between **Amon Ground Control** (PC) and the **Amon Lander** drone, built around the WCH **CH32V003F4P6** MCU with **dual NRF24L01 + RFX2401C** radios for robust range. 
+USB-powered RF bridge between **Amon Ground Control** (PC) and the **Amon Lander** drone, built around the WCH **CH32V003F4P6** MCU with **dual NRF24L01 + RFX2401C** radios for robust range. 
 
 ![Amon Link](https://github.com/TilenTinta/Amon_Link/blob/main/Images/PXL_20260405_085348789.jpg)  
 
