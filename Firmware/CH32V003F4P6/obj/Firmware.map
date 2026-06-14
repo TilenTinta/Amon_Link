@@ -1421,24 +1421,24 @@ END GROUP
                 0x0000000020000800                PROVIDE (_eusrstack = .)
 OUTPUT(Firmware.elf elf32-littleriscv)
 
-.debug_info     0x0000000000000000     0xb0f5
+.debug_info     0x0000000000000000     0xb0f9
  .debug_info    0x0000000000000000     0x1624 ./User/NRF24L01/NRF24L01.o
- .debug_info    0x0000000000001624      0x71b ./User/DataTranscode/data_transcode.o
- .debug_info    0x0000000000001d3f      0x2f5 ./User/ch32v00x_it.o
- .debug_info    0x0000000000002034     0x2ddb ./User/main.o
- .debug_info    0x0000000000004e0f      0x35a ./User/system_ch32v00x.o
- .debug_info    0x0000000000005169       0x23 ./Startup/startup_ch32v00x.o
- .debug_info    0x000000000000518c      0x1d2 ./Peripheral/src/ch32v00x_dbgmcu.o
- .debug_info    0x000000000000535e      0x435 ./Peripheral/src/ch32v00x_dma.o
- .debug_info    0x0000000000005793      0x338 ./Peripheral/src/ch32v00x_exti.o
- .debug_info    0x0000000000005acb      0xb58 ./Peripheral/src/ch32v00x_flash.o
- .debug_info    0x0000000000006623      0x741 ./Peripheral/src/ch32v00x_gpio.o
- .debug_info    0x0000000000006d64      0x4f7 ./Peripheral/src/ch32v00x_misc.o
- .debug_info    0x000000000000725b      0x78d ./Peripheral/src/ch32v00x_rcc.o
- .debug_info    0x00000000000079e8      0x74f ./Peripheral/src/ch32v00x_spi.o
- .debug_info    0x0000000000008137     0x1e98 ./Peripheral/src/ch32v00x_tim.o
- .debug_info    0x0000000000009fcf      0xa39 ./Peripheral/src/ch32v00x_usart.o
- .debug_info    0x000000000000aa08      0x6ed ./Debug/debug.o
+ .debug_info    0x0000000000001624      0x71f ./User/DataTranscode/data_transcode.o
+ .debug_info    0x0000000000001d43      0x2f5 ./User/ch32v00x_it.o
+ .debug_info    0x0000000000002038     0x2ddb ./User/main.o
+ .debug_info    0x0000000000004e13      0x35a ./User/system_ch32v00x.o
+ .debug_info    0x000000000000516d       0x23 ./Startup/startup_ch32v00x.o
+ .debug_info    0x0000000000005190      0x1d2 ./Peripheral/src/ch32v00x_dbgmcu.o
+ .debug_info    0x0000000000005362      0x435 ./Peripheral/src/ch32v00x_dma.o
+ .debug_info    0x0000000000005797      0x338 ./Peripheral/src/ch32v00x_exti.o
+ .debug_info    0x0000000000005acf      0xb58 ./Peripheral/src/ch32v00x_flash.o
+ .debug_info    0x0000000000006627      0x741 ./Peripheral/src/ch32v00x_gpio.o
+ .debug_info    0x0000000000006d68      0x4f7 ./Peripheral/src/ch32v00x_misc.o
+ .debug_info    0x000000000000725f      0x78d ./Peripheral/src/ch32v00x_rcc.o
+ .debug_info    0x00000000000079ec      0x74f ./Peripheral/src/ch32v00x_spi.o
+ .debug_info    0x000000000000813b     0x1e98 ./Peripheral/src/ch32v00x_tim.o
+ .debug_info    0x0000000000009fd3      0xa39 ./Peripheral/src/ch32v00x_usart.o
+ .debug_info    0x000000000000aa0c      0x6ed ./Debug/debug.o
 
 .debug_abbrev   0x0000000000000000     0x2383
  .debug_abbrev  0x0000000000000000      0x35b ./User/NRF24L01/NRF24L01.o
@@ -1529,41 +1529,41 @@ OUTPUT(Firmware.elf elf32-littleriscv)
                 0x0000000000000a88       0x50 ./Debug/debug.o
 
 .debug_rnglists
-                0x0000000000000000      0xd3b
+                0x0000000000000000      0xd1f
  .debug_rnglists
                 0x0000000000000000      0x13d ./User/NRF24L01/NRF24L01.o
  .debug_rnglists
-                0x000000000000013d       0xfd ./User/DataTranscode/data_transcode.o
+                0x000000000000013d       0xe1 ./User/DataTranscode/data_transcode.o
  .debug_rnglists
-                0x000000000000023a       0x1f ./User/ch32v00x_it.o
+                0x000000000000021e       0x1f ./User/ch32v00x_it.o
  .debug_rnglists
-                0x0000000000000259       0xfb ./User/main.o
+                0x000000000000023d       0xfb ./User/main.o
  .debug_rnglists
-                0x0000000000000354       0x1f ./User/system_ch32v00x.o
+                0x0000000000000338       0x1f ./User/system_ch32v00x.o
  .debug_rnglists
-                0x0000000000000373       0x21 ./Startup/startup_ch32v00x.o
+                0x0000000000000357       0x21 ./Startup/startup_ch32v00x.o
  .debug_rnglists
-                0x0000000000000394       0x56 ./Peripheral/src/ch32v00x_dbgmcu.o
+                0x0000000000000378       0x56 ./Peripheral/src/ch32v00x_dbgmcu.o
  .debug_rnglists
-                0x00000000000003ea       0x70 ./Peripheral/src/ch32v00x_dma.o
+                0x00000000000003ce       0x70 ./Peripheral/src/ch32v00x_dma.o
  .debug_rnglists
-                0x000000000000045a       0x55 ./Peripheral/src/ch32v00x_exti.o
+                0x000000000000043e       0x55 ./Peripheral/src/ch32v00x_exti.o
  .debug_rnglists
-                0x00000000000004af      0x12d ./Peripheral/src/ch32v00x_flash.o
+                0x0000000000000493      0x12d ./Peripheral/src/ch32v00x_flash.o
  .debug_rnglists
-                0x00000000000005dc       0x9d ./Peripheral/src/ch32v00x_gpio.o
+                0x00000000000005c0       0x9d ./Peripheral/src/ch32v00x_gpio.o
  .debug_rnglists
-                0x0000000000000679       0x58 ./Peripheral/src/ch32v00x_misc.o
+                0x000000000000065d       0x58 ./Peripheral/src/ch32v00x_misc.o
  .debug_rnglists
-                0x00000000000006d1       0xee ./Peripheral/src/ch32v00x_rcc.o
+                0x00000000000006b5       0xee ./Peripheral/src/ch32v00x_rcc.o
  .debug_rnglists
-                0x00000000000007bf       0xc1 ./Peripheral/src/ch32v00x_spi.o
+                0x00000000000007a3       0xc1 ./Peripheral/src/ch32v00x_spi.o
  .debug_rnglists
-                0x0000000000000880      0x35d ./Peripheral/src/ch32v00x_tim.o
+                0x0000000000000864      0x35d ./Peripheral/src/ch32v00x_tim.o
  .debug_rnglists
-                0x0000000000000bdd      0x112 ./Peripheral/src/ch32v00x_usart.o
+                0x0000000000000bc1      0x112 ./Peripheral/src/ch32v00x_usart.o
  .debug_rnglists
-                0x0000000000000cef       0x4c ./Debug/debug.o
+                0x0000000000000cd3       0x4c ./Debug/debug.o
 
 .debug_line     0x0000000000000000     0xcb7b
  .debug_line    0x0000000000000000     0x10a0 ./User/NRF24L01/NRF24L01.o

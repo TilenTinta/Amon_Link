@@ -54,7 +54,7 @@ SPI_HandleTypeDef hspi1;                                    // SPI handle
 static const s_nrf_config radio_tx_normal_cfg = {
     .channel = 70,
     .addr_width = AW_5BYTE,
-    .auto_ack = 1,
+    .auto_ack = 0, // 1 - TEST
     .dynamic_payload = 1,
     .retries = 15, // 8
     .retry_delay = ARD_3500us, // ARD_1000us
@@ -82,7 +82,7 @@ static const s_pipe_addr radio_tx_addr = {
 static const s_nrf_config radio_rx_normal_cfg = {
     .channel = 100, //100
     .addr_width = AW_5BYTE,
-    .auto_ack = 1,
+    .auto_ack = 0, // 1
     .dynamic_payload = 1,
     .retries = 0,
     .retry_delay = 0,

@@ -6,7 +6,7 @@ EXEC_P, HAS_SYMS, D_PAGED
 start address 0x00001000
 
 Program Header:
-0x70000003 off    0x000260fd vaddr 0x00000000 paddr 0x00000000 align 2**0
+0x70000003 off    0x000260e9 vaddr 0x00000000 paddr 0x00000000 align 2**0
          filesz 0x00000027 memsz 0x00000000 flags r--
     LOAD off    0x00001000 vaddr 0x00001000 paddr 0x00001000 align 2**12
          filesz 0x00001fd4 memsz 0x00001fd4 flags r-x
@@ -39,27 +39,27 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   ALLOC
  10 .stack        00000100  20000700  20000700  00003700  2**0
                   ALLOC
- 11 .debug_info   0000b0f5  00000000  00000000  00003038  2**0
+ 11 .debug_info   0000b0f9  00000000  00000000  00003038  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 12 .debug_abbrev 00002383  00000000  00000000  0000e12d  2**0
+ 12 .debug_abbrev 00002383  00000000  00000000  0000e131  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 13 .debug_loclists 0000402e  00000000  00000000  000104b0  2**0
+ 13 .debug_loclists 0000402e  00000000  00000000  000104b4  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 14 .debug_aranges 00000ad8  00000000  00000000  000144e0  2**3
+ 14 .debug_aranges 00000ad8  00000000  00000000  000144e8  2**3
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 15 .debug_rnglists 00000d3b  00000000  00000000  00014fb8  2**0
+ 15 .debug_rnglists 00000d1f  00000000  00000000  00014fc0  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 16 .debug_line   0000cb7b  00000000  00000000  00015cf3  2**0
+ 16 .debug_line   0000cb7b  00000000  00000000  00015cdf  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 17 .debug_str    000031a7  00000000  00000000  0002286e  2**0
+ 17 .debug_str    000031a7  00000000  00000000  0002285a  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 18 .debug_line_str 000006b7  00000000  00000000  00025a15  2**0
+ 18 .debug_line_str 000006b7  00000000  00000000  00025a01  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 19 .comment      00000031  00000000  00000000  000260cc  2**0
+ 19 .comment      00000031  00000000  00000000  000260b8  2**0
                   CONTENTS, READONLY
- 20 .riscv.attributes 00000027  00000000  00000000  000260fd  2**0
+ 20 .riscv.attributes 00000027  00000000  00000000  000260e9  2**0
                   CONTENTS, READONLY
- 21 .debug_frame  00001888  00000000  00000000  00026124  2**2
+ 21 .debug_frame  00001888  00000000  00000000  00026110  2**2
                   CONTENTS, READONLY, DEBUGGING, OCTETS
 SYMBOL TABLE:
 00000000 l    d  .bootloader	00000000 .bootloader
@@ -1069,44 +1069,45 @@ Disassembly of section .text:
     174c:	feb747e3          	blt	a4,a1,173a <RF_decode+0x2c>
     1750:	4705                	li	a4,1
     1752:	4509                	li	a0,2
-    1754:	02e69963          	bne	a3,a4,1786 <RF_decode+0x78>
+    1754:	00e69f63          	bne	a3,a4,1772 <RF_decode+0x64>
     1758:	4745                	li	a4,17
     175a:	4515                	li	a0,5
-    175c:	02e78563          	beq	a5,a4,1786 <RF_decode+0x78>
-    1760:	00f76a63          	bltu	a4,a5,1774 <RF_decode+0x66>
-    1764:	02d78463          	beq	a5,a3,178c <RF_decode+0x7e>
+    175c:	00e78b63          	beq	a5,a4,1772 <RF_decode+0x64>
+    1760:	00f76c63          	bltu	a4,a5,1778 <RF_decode+0x6a>
+    1764:	02d78563          	beq	a5,a3,178e <RF_decode+0x80>
     1768:	4741                	li	a4,16
-    176a:	4501                	li	a0,0
-    176c:	00e79d63          	bne	a5,a4,1786 <RF_decode+0x78>
-    1770:	450d                	li	a0,3
-    1772:	a811                	j	1786 <RF_decode+0x78>
-    1774:	02000713          	li	a4,32
-    1778:	fee78ce3          	beq	a5,a4,1770 <RF_decode+0x62>
-    177c:	f0178513          	addi	a0,a5,-255
-    1780:	00153513          	seqz	a0,a0
-    1784:	050a                	slli	a0,a0,0x2
-    1786:	0111                	addi	sp,sp,4
-    1788:	923ff06f          	j	10aa <__riscv_restore_0>
-    178c:	a21c                	sb	a5,0(a2)
-    178e:	3430                	lbu	a2,11(s0)
-    1790:	4791                	li	a5,4
-    1792:	fcc7ffe3          	bgeu	a5,a2,1770 <RF_decode+0x62>
-    1796:	207a                	lhu	a4,6(s0)
-    1798:	faa00793          	li	a5,-86
-    179c:	04f40323          	sb	a5,70(s0)
-    17a0:	00860793          	addi	a5,a2,8
-    17a4:	04f403a3          	sb	a5,71(s0)
-    17a8:	04e41423          	sh	a4,72(s0)
-    17ac:	243c                	lbu	a5,10(s0)
-    17ae:	241a                	lhu	a4,8(s0)
-    17b0:	04c406a3          	sb	a2,77(s0)
-    17b4:	04f40623          	sb	a5,76(s0)
-    17b8:	04e41523          	sh	a4,74(s0)
-    17bc:	00c40593          	addi	a1,s0,12
-    17c0:	05040513          	addi	a0,s0,80
-    17c4:	99dff0ef          	jal	ra,1160 <memmove>
-    17c8:	451d                	li	a0,7
-    17ca:	bf75                	j	1786 <RF_decode+0x78>
+    176a:	450d                	li	a0,3
+    176c:	00e78363          	beq	a5,a4,1772 <RF_decode+0x64>
+    1770:	4501                	li	a0,0
+    1772:	0111                	addi	sp,sp,4
+    1774:	937ff06f          	j	10aa <__riscv_restore_0>
+    1778:	02000713          	li	a4,32
+    177c:	450d                	li	a0,3
+    177e:	fee78ae3          	beq	a5,a4,1772 <RF_decode+0x64>
+    1782:	f0178513          	addi	a0,a5,-255
+    1786:	00153513          	seqz	a0,a0
+    178a:	050a                	slli	a0,a0,0x2
+    178c:	b7dd                	j	1772 <RF_decode+0x64>
+    178e:	a21c                	sb	a5,0(a2)
+    1790:	3430                	lbu	a2,11(s0)
+    1792:	207a                	lhu	a4,6(s0)
+    1794:	faa00793          	li	a5,-86
+    1798:	04f40323          	sb	a5,70(s0)
+    179c:	00860793          	addi	a5,a2,8
+    17a0:	04f403a3          	sb	a5,71(s0)
+    17a4:	04e41423          	sh	a4,72(s0)
+    17a8:	243c                	lbu	a5,10(s0)
+    17aa:	241a                	lhu	a4,8(s0)
+    17ac:	04c406a3          	sb	a2,77(s0)
+    17b0:	04f40623          	sb	a5,76(s0)
+    17b4:	04e41523          	sh	a4,74(s0)
+    17b8:	e219                	bnez	a2,17be <RF_decode+0xb0>
+    17ba:	451d                	li	a0,7
+    17bc:	bf5d                	j	1772 <RF_decode+0x64>
+    17be:	00c40593          	addi	a1,s0,12
+    17c2:	05040513          	addi	a0,s0,80
+    17c6:	99bff0ef          	jal	ra,1160 <memmove>
+    17ca:	bfc5                	j	17ba <RF_decode+0xac>
 
 000017cc <RF_encode>:
     17cc:	217c                	lbu	a5,6(a0)
@@ -3406,11 +3407,11 @@ Disassembly of section .text:
     2f90:	0364 0100 0000 0000 0000 0000 0001 0000     d...............
 
 00002fa0 <radio_rx_normal_cfg>:
-    2fa0:	0364 0101 0000 0000 0000 0000 0001 0000     d...............
+    2fa0:	0364 0100 0000 0000 0000 0000 0001 0000     d...............
 
 00002fb0 <radio_tx_addr>:
     2fb0:	b2d4 78aa 0050 0000 0000 0000 0000 0000     ...xP...........
     2fc0:	0000 0000                                   ....
 
 00002fc4 <radio_tx_normal_cfg>:
-    2fc4:	0346 0101 000f 00d0 0000 0000 0000 0000     F...............
+    2fc4:	0346 0100 000f 00d0 0000 0000 0000 0000     F...............

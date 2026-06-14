@@ -297,7 +297,7 @@ uint8_t RF_decode(uint8_t *raw_rf_data, s_packets *packets,  uint8_t *uart_tx_fl
 
             *uart_tx_flag = 1;    // indicate that new data to send is available
             //if (packets->rf_packet.plen > 5) *stream_flag = 1; // detect if packet is telemetry data
-            if (packets->rf_packet.plen < 5) return TRANSCODE_DEST_ERR;
+            //if (packets->rf_packet.plen < 5) return TRANSCODE_DEST_ERR;
 
             // save in fields of UART packet
             packets->uart_packet.sof       = SIG_SOF;
@@ -309,9 +309,12 @@ uint8_t RF_decode(uint8_t *raw_rf_data, s_packets *packets,  uint8_t *uart_tx_fl
             packets->uart_packet.opcode    = packets->rf_packet.opcode;
             packets->uart_packet.plen      = packets->rf_packet.plen;
 
-            for (int i = 0; i < packets->rf_packet.plen; i++)
+            if (packets->rf_packet.plen != 0)
             {
-                packets->uart_packet.payload[i] = packets->rf_packet.payload[i];
+                for (int i = 0; i < packets->rf_packet.plen; i++)
+                {
+                    packets->uart_packet.payload[i] = packets->rf_packet.payload[i];
+                }
             }
 
             return TRANSCODE_DEST_PC;

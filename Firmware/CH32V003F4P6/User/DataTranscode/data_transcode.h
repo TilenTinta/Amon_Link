@@ -107,10 +107,17 @@
 #define OPT_DRONE_GET_PARAMS    0x30    // Get parameters from drone
 #define OPT_DRONE_SET_PARAMS    0x31    // Set parameters on drone
 #define OPT_DRONE_SET_STATE 	0x32    // Change rurrent state of drone (arm/disarm/modes)
-#define OPT_DRONE_COMMAND       0x33    // Send command to drone (calibrate, save¡­)
+#define OPT_DRONE_COMMAND       0x33    // Send command to drone (calibrate, save...)
+#define OPT_DRONE_FLIGHT_PATH	0x34	// Send flight path command
+#define OPT_DRONE_FPATH_CLEAR	0x35	// Clear flight path command
 #define OPT_TELEMETRY           0x40    // Telemetry data from drone (STREAM; sub-type via TLVs)
 #define OPT_LOG_DUMP			0x50	// Flight log dump
 #define OPT_LOG_RM 				0x51	// Flight log remove
+#define OPT_CAL_PARAM			0x60	// Calibration command with data
+#define OPT_IDENTIFICATION		0x70	// Enable drone identification mode
+#define OPT_IDENTI_EDF			0x71	// Enable drone identification mode - EDF test
+#define OPT_IDENTI_SERVO		0x72	// Enable drone identification mode - servo test
+#define OPT_IDENTI_MOMENT		0x73	// Enable drone identification mode - moment test
 
 // Payload format ¡ª TLV (Type-Length-Value): T(1B), L(1B), V(L bytes)
 #define TVL_BAT                 0x01    // Battery mV (u16 LE)

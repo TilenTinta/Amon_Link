@@ -57,7 +57,7 @@ main-build: Firmware.elf secondary-outputs
 
 # Tool invocations
 Firmware.elf: $(OBJS) $(USER_OBJS_ESCAPE)
-	@	riscv-wch-elf-gcc -march=rv32ecxw -mabi=ilp32e -msmall-data-limit=0 -msave-restore -fmax-errors=20 -Os -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -fno-common -Wunused -Wuninitialized -g -T "c:/DATA/Projects/Amon_Link/Firmware/CH32V003F4P6/Ld/Link.ld" -nostartfiles -Xlinker --gc-sections -Xlinker --print-memory-usage -Wl,-Map,"Firmware.map" --specs=nano.specs --specs=nosys.specs -o "Firmware.elf" $(OBJS) $(LIBS) -lprintf
+	@	riscv-wch-elf-gcc -march=rv32ecxw -mabi=ilp32e -msmall-data-limit=0 -msave-restore -fmax-errors=20 -Os -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -fno-common -Wunused -Wuninitialized -g -T "c:/DATA/Projects/Amon_Link/Firmware/CH32V003F4P6/Ld/Link.ld" -nostartfiles -Xlinker --gc-sections -Wl,-Map,"Firmware.map" --specs=nano.specs --specs=nosys.specs -o "Firmware.elf" $(OBJS) $(LIBS) -lprintf
 Firmware.hex: Firmware.elf
 	@	riscv-wch-elf-objcopy -O ihex "Firmware.elf" "Firmware.hex"
 Firmware.lst: Firmware.elf
