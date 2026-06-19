@@ -30,6 +30,7 @@
 #define APP_METADATA_ADDR   APP_END_ADDRESS - PAGE_SIZE // Address in flash where FW data is stored (flags, CRC32) - 64 Bytes
 
 #define RADIO_NO            2           // Number of radios (1 or 2)
+//#define RADIO_HW_ACK				    // Uncomment to enable use of HW ACK function provided by IC (NRF24L01) TODO
 
 #define STATE_INIT          0           // State machine value: boot-up (blue light)
 #define STATE_RUNNING       1           // State machine value: device initializet correctly, data trafic is running
