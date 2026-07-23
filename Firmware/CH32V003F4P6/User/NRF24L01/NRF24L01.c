@@ -337,7 +337,7 @@ void NRF24_init(s_nRF24L01 *dev)
     NRF24_WriteRegister(dev, SETUP_AW, dev->config->addr_width & AW, NULL);
 
     // Set RF channel
-    NRF24_WriteRegister(dev, RF_CH, dev->config->channel & RF_CH, NULL);
+    NRF24_WriteRegister(dev, RF_CH, dev->config->channel & RF_CH_REG, NULL);
 
     // Set datarate and power
     reg = 0;

@@ -302,51 +302,75 @@ int main(void)
                 char newline[] = "\r\n";
                 UartSendBuffer((uint8_t*)newline, strlen(newline));
 
+
                 // Radios initialization and setup
                 NRF24_pin_config(&radio1, SPI1, GPIOC, NRF_CS1, GPIOC, NRF_CE1);        // Map pins for radio 1
                 NRF24_pin_config(&radio2, SPI1, GPIOD, NRF_CS2, GPIOC, NRF_CE2);        // Map pins for radio 2
 
+                Delay_Ms(100);
+
                 uint8_t status = 0;
-                if (NRF24_ReadStatus(&radio1, &status) == 0) 
+                NRF24_ReadStatus(&radio1, &status);
+                if (status == 0x00 || status == 0xFF)
                 {
-                    if (status != 0x0E) 
-                    {
-                        radio1.radioErr = NRF_ERR_BOOT;
-                    }
-                    else
-                    {
-                        radio1.radioErr = NRF_ERR_NONE;
-                        radio1.op_modes = NRF_MODE_PWR_DOWN;
-                    }
+                    radio1.radioErr = NRF_ERR_BOOT;
                 }
+                else
+                {
+                    // Radio answered
+                    NRF24_WriteRegister(&radio1, STATUS, RX_DR | TX_DS | MAX_RT, NULL);
+                    radio1.radioErr = NRF_ERR_NONE;
+                    radio1.op_modes = NRF_MODE_PWR_DOWN;
+                }
+
+                Delay_Ms(10); // Safe delay for checking radio status
 
                 if (NRF24_ReadStatus(&radio2, &status) == 0) 
                 {
-                    if (status != 0x0E) 
+                    if (status == 0x00 || status == 0xFF)
                     {
                         radio2.radioErr = NRF_ERR_BOOT;
                     }
                     else
                     {
+                        // Radio answered
+                        NRF24_WriteRegister(&radio2, STATUS, RX_DR | TX_DS | MAX_RT, NULL);
                         radio2.radioErr = NRF_ERR_NONE;
                         radio2.op_modes = NRF_MODE_PWR_DOWN;
                     }
                 }
 
-                // Set radio configurations and init
-                radio1.role     = NRF_ROLE_PTX;
-                radio1.config   = &radio_tx_normal_cfg;
-                radio1.address  = &radio_tx_addr;
-                radio1.id       = NRF_ID_1;
-                NRF24_init(&radio1);
-                NRF24_SetTXAddress(&radio1, radio1.address->tx_addr);
+                Delay_Ms(10);
 
-                radio2.role     = NRF_ROLE_PRX;
-                radio2.config   = &radio_rx_normal_cfg;
-                radio2.address  = &radio_rx_addr;
-                radio2.id       = NRF_ID_2;
-                NRF24_init(&radio2);
-                NRF24_SetRXAddress(&radio2, 0, radio2.address->pipe0_rx_addr);
+                // Set radio configurations and init
+                if (radio1.radioErr != 1)
+                {
+                    radio1.role     = NRF_ROLE_PTX;
+                    radio1.config   = &radio_tx_normal_cfg;
+                    radio1.address  = &radio_tx_addr;
+                    radio1.id       = NRF_ID_1;
+
+                    NRF24_SetTXAddress(&radio1, radio1.address->tx_addr);
+                    NRF24_init(&radio1);
+                    NRF24_ReadStatus(&radio1, &status);
+				    if (status != 0x0E) radio1.radioErr = NRF_ERR_BOOT;
+                }
+                
+                Delay_Ms(10);
+
+                if (radio2.radioErr != 1)
+                {
+                    radio2.role     = NRF_ROLE_PRX;
+                    radio2.config   = &radio_rx_normal_cfg;
+                    radio2.address  = &radio_rx_addr;
+                    radio2.id       = NRF_ID_2;
+
+                    NRF24_SetRXAddress(&radio2, 0, radio2.address->pipe0_rx_addr);
+                    NRF24_init(&radio2);
+                    NRF24_ReadStatus(&radio2, &status);
+				    if (status != 0x0E) radio2.radioErr = NRF_ERR_BOOT;;
+                    
+                }
 
                 //NRF24_ReadStatus(&radio1, &status); // Clear all irqs
 
